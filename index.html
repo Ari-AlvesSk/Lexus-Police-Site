@@ -1,4 +1,43 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -28,23 +67,59 @@
         .dropdown-item:hover {
             background-color: #e53e3e;
         }
+        .news-card {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .news-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .news-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e53e3e;
+            cursor: pointer;
+        }
+        .news-meta {
+            font-size: 0.875rem;
+            color: #a0aec0;
+            margin-bottom: 0.5rem;
+        }
         .news-content {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease-out;
+            color: #e2e8f0;
         }
         .news-content.open {
-            max-height: 1000px; /* Ajuste conforme necessário */
+            max-height: 1000px; /* Adjust as needed */
         }
         .news-image {
             max-width: 100%;
             height: auto;
             margin-top: 1rem;
+            border-radius: 0.375rem;
+        }
+        .delete-button {
+            background-color: #c53030;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            margin-top: 1rem;
+            display: inline-block;
+        }
+        .delete-button:hover {
+            background-color: #9b2c2c;
         }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans">
-    <!-- SVG para o filtro de gradiente na logo -->
+    <!-- SVG for gradient filter on logo -->
     <svg height="0" width="0">
         <defs>
             <filter id="gradient-filter">
@@ -56,7 +131,7 @@
         </defs>
     </svg>
 
-    <!-- Cabeçalho -->
+    <!-- Header -->
     <header class="bg-gradient-to-r from-red-900 to-gray-900 text-white py-4">
         <div class="container mx-auto px-4 flex items-center">
             <img src="https://media.discordapp.net/attachments/1379269843458719766/1394140869073961041/sem_fundo.png?ex=68785d5d&is=68770bdd&hm=74ebc9cefb0e7d9afc2a7dc5a38d90fde59e9eb5543db45559ec4d96cc6886a9&=&format=webp&quality=lossless&width=438&height=438" alt="Logo Polícia Lexus RolePlay" class="h-16 gradient-logo">
@@ -67,7 +142,7 @@
         </div>
     </header>
 
-    <!-- Navegação -->
+    <!-- Navigation -->
     <nav class="bg-gray-800 text-white py-2">
         <div class="container mx-auto px-4 flex justify-around">
             <a href="#news" class="hover:text-red-500">Notícias</a>
@@ -82,34 +157,36 @@
         </div>
     </nav>
 
-    <!-- Seção de Notícias -->
+    <!-- News Section -->
     <section id="news" class="container mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-red-500 mb-4">Notícias Policiais</h2>
         <div class="bg-gray-800 p-6 rounded-lg shadow-md">
-            <div id="news-form" class="mb-4 hidden">
-                <h3 class="text-lg font-semibold text-gray-200 mb-2">Adicionar Notícia</h3>
-                <label for="news-title" class="block text-gray-200">Título:</label>
-                <input type="text" id="news-title" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-2" placeholder="Título da notícia">
-                <label for="news-content" class="block text-gray-200">Conteúdo:</label>
-                <textarea id="news-content" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-2" rows="4" placeholder="Escreva o conteúdo da notícia"></textarea>
-                <label for="news-author" class="block text-gray-200">Autor:</label>
-                <input type="text" id="news-author" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-2" placeholder="Nome do autor">
-                <label for="news-image" class="block text-gray-200">Imagem (opcional):</label>
-                <input type="file" id="news-image" accept="image/*" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-2">
+            <div id="news-form" class="mb-6 hidden">
+                <h3 class="text-lg font-semibold text-gray-200 mb-4">Adicionar Notícia</h3>
+                <label for="news-title" class="block text-gray-200 mb-2">Título:</label>
+                <input type="text" id="news-title" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Título da notícia">
+                <label for="news-content" class="block text-gray-200 mb-2">Conteúdo:</label>
+                <textarea id="news-content" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" rows="4" placeholder="Escreva o conteúdo da notícia"></textarea>
+                <label for="news-author" class="block text-gray-200 mb-2">Autor:</label>
+                <input type="text" id="news-author" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Nome do autor">
+                <label for="news-image-file" class="block text-gray-200 mb-2">Imagem (Upload):</label>
+                <input type="file" id="news-image-file" accept="image/*" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4">
+                <label for="news-image-url" class="block text-gray-200 mb-2">Imagem (URL):</label>
+                <input type="text" id="news-image-url" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Ex.: https://cdn.discordapp.com/...">
                 <button onclick="addNews()" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Publicar Notícia</button>
             </div>
-            <h3 class="text-lg font-semibold text-gray-200 mb-2">Notícias Publicadas</h3>
+            <h3 class="text-lg font-semibold text-gray-200 mb-4">Notícias Publicadas</h3>
             <div id="news-list" class="text-gray-200"></div>
         </div>
     </section>
 
-    <!-- Página Inicial -->
+    <!-- Home Section -->
     <section id="home" class="container mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-red-500 mb-4">Bem-vindo à Polícia de Lexus RolePlay</h2>
-        <p class="mb-4">Este é o portal oficial da Polícia de Lexus RolePlay para consulta de códigos penais, cálculo de penalidades, pesquisa de infrações e notícias policiais no servidor de GTA RP. Confira as últimas <a href="#news" class="text-red-500 hover:underline">Notícias</a>, utilize a <a href="#calculator" class="text-red-500 hover:underline">Calculadora Penal</a> para determinar penas, multas e fianças, ou a <a href="#search" class="text-red-500 hover:underline">Pesquisa de Crimes</a> para encontrar detalhes de infrações específicas. Faça <a href="#login" class="text-red-500 hover:underline">login</a> para publicar notícias.</p>
+        <p class="mb-4">Este é o portal oficial da Polícia de Lexus RolePlay para consulta de códigos penais, cálculo de penalidades, pesquisa de infrações e notícias policiais no servidor de GTA RP. Confira as últimas <a href="#news" class="text-red-500 hover:underline">Notícias</a>, utilize a <a href="#calculator" class="text-red-500 hover:underline">Calculadora Penal</a> para determinar penas, multas e fianças, ou a <a href="#search" class="text-red-500 hover:underline">Pesquisa de Crimes</a> para encontrar detalhes de infrações específicas. Faça <a href="#login" class="text-red-500 hover:underline">login</a> para publicar ou gerenciar notícias.</p>
     </section>
 
-    <!-- Lista de Códigos Penais -->
+    <!-- Penal Codes Section -->
     <section id="crimes" class="container mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-red-500 mb-4">Códigos Penais de Lexus RolePlay</h2>
         <div class="overflow-x-auto">
@@ -130,7 +207,7 @@
         </div>
     </section>
 
-    <!-- Calculadora Penal -->
+    <!-- Penal Calculator Section -->
     <section id="calculator" class="container mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-red-500 mb-4">Calculadora Penal</h2>
         <div class="bg-gray-800 p-6 rounded-lg shadow-md relative">
@@ -146,7 +223,7 @@
         </div>
     </section>
 
-    <!-- Pesquisa de Crimes -->
+    <!-- Crime Search Section -->
     <section id="search" class="container mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-red-500 mb-4">Pesquisa de Crimes</h2>
         <div class="bg-gray-800 p-6 rounded-lg shadow-md">
@@ -157,7 +234,7 @@
         </div>
     </section>
 
-    <!-- Seção de Login -->
+    <!-- Login Section -->
     <section id="login" class="container mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-red-500 mb-4">Login</h2>
         <div id="login-form" class="bg-gray-800 p-6 rounded-lg shadow-md">
@@ -170,7 +247,7 @@
         </div>
     </section>
 
-    <!-- Rodapé -->
+    <!-- Footer -->
     <footer class="bg-gradient-to-r from-red-900 to-gray-900 text-white py-4">
         <div class="container mx-auto px-4">
             <p>© 2025 Polícia de Lexus RolePlay. Todos os direitos reservados.</p>
@@ -178,7 +255,7 @@
     </footer>
 
     <script>
-        // Dados dos crimes
+        // Crimes array (to be provided by you)
         const crimes = [
             { categoria: "Crimes contra a Pessoa", delito: "Homicídio Culposo", artigo: "Art. 121 §3", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
             { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal Leve", artigo: "Art. 129", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
@@ -346,22 +423,35 @@
             { categoria: "Crimes contra o Patrimônio", delito: "Material Explosivo", artigo: "Art. 370", pena: "12-13", multa: 2000, afiancavel: "Sim", fiança: 30000 }
         ];
 
-        // Array para armazenar crimes selecionados
+        // Array for selected crimes
         let selectedCrimes = [];
 
-        // Array para armazenar notícias (em memória)
-        let news = [];
-
-        // Credenciais de login (hardcoded para demonstração)
-        const users = [
-            { username: "ari", password: "arineto2016" },
-            { username: "wl", password: "wldono1112" }
+        // Array for news (loaded from localStorage)
+        let news = JSON.parse(localStorage.getItem('news')) || [
+            {
+                title: "Recrutamento Aberto para a Polícia de Lexus RolePlay",
+                content: "A Polícia de Lexus RolePlay está com inscrições abertas para novos oficiais! Estamos em busca de cidadãos comprometidos, corajosos e dispostos a manter a ordem e a segurança nas ruas de Los Santos.\n\n**Requisitos para Candidatura:**\n- Ser maior de 18 anos no roleplay.\n- Possuir habilitação válida para veículos (CNH categoria B, no mínimo).\n- Não possuir antecedentes criminais graves (crimes inafiançáveis).\n- Disponibilidade para treinamentos e operações em horários variados.\n- Compromisso com as regras do servidor e do código penal de Lexus.\n\n**Como se Inscrever:**\n1. Acesse o canal oficial da Polícia no Discord do servidor Lexus RolePlay.\n2. Preencha o formulário de inscrição disponível no canal #recrutamento.\n3. Participe da entrevista e do treinamento prático agendados pela equipe.\n\n**Benefícios:**\n- Treinamento completo em operações policiais.\n- Oportunidade de ascensão hierárquica dentro da força policial.\n- Equipamentos e viaturas de ponta para operações.\n- Integração com uma equipe dedicada e respeitada no servidor.\n\nNão perca essa chance de fazer parte da elite policial de Los Santos! As inscrições ficam abertas até **31/07/2025**. Para dúvidas, contate o comando pelo Discord ou no QG da Polícia em Los Santos.",
+                author: "Comandante João Silva",
+                date: "16/07/2025",
+                image: "https://cdn.discordapp.com/attachments/1379269843458719766/1394908923315748875/pmerj.png?ex=68792e6b&is=6877dceb&hm=0470ba69d550125fe2ab6deb613af50f180f7bf98228d99fb2b319d83032e3ea&"
+            }
         ];
 
-        // Estado de autenticação
+        // Save news to localStorage
+        function saveNews() {
+            localStorage.setItem('news', JSON.stringify(news));
+        }
+
+        // Hardcoded users for demo
+        const users = [
+            { username: "admin1", password: "password1" },
+            { username: "officer2", password: "password2" }
+        ];
+
+        // Authentication state
         let isLoggedIn = false;
 
-        // Função para verificar login
+        // Login function
         function login() {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -382,23 +472,26 @@
                 loginError.classList.add('hidden');
                 document.getElementById('username').value = '';
                 document.getElementById('password').value = '';
+                updateNewsList(); // Refresh news list to show delete buttons
             } else {
                 loginError.classList.remove('hidden');
             }
         }
 
-        // Função para logout
+        // Logout function
         function logout() {
             isLoggedIn = false;
             document.getElementById('login-form').classList.remove('hidden');
             document.getElementById('news-form').classList.add('hidden');
             document.getElementById('auth-nav').classList.add('hidden');
             document.getElementById('login-link').classList.remove('hidden');
+            updateNewsList(); // Refresh news list to hide delete buttons
         }
 
-        // Função para preencher a tabela de crimes
+        // Populate crimes table
         function populateCrimesTable() {
             const tableBody = document.getElementById('crimes-table');
+            tableBody.innerHTML = ''; // Clear table
             crimes.forEach(crime => {
                 const row = document.createElement('tr');
                 row.className = 'table-row';
@@ -415,7 +508,7 @@
             });
         }
 
-        // Função para exibir sugestões na calculadora
+        // Show suggestions for penal calculator
         function showSuggestions() {
             const input = document.getElementById('crime-code').value.trim().toLowerCase();
             const suggestionsDiv = document.getElementById('suggestions');
@@ -446,7 +539,7 @@
             }
         }
 
-        // Função para adicionar crime à lista de selecionados
+        // Add crime to selected list
         function addCrime(crime = null) {
             const codeInput = document.getElementById('crime-code').value.trim();
             const selectedCrime = crime || crimes.find(c => c.artigo.toLowerCase() === codeInput.toLowerCase());
@@ -461,7 +554,7 @@
             }
         }
 
-        // Função para atualizar a exibição dos crimes selecionados e totais
+        // Update selected crimes display
         function updateSelectedCrimes() {
             const selectedCrimesDiv = document.getElementById('selected-crimes');
             const totalsDiv = document.getElementById('totals');
@@ -509,14 +602,14 @@
             `;
         }
 
-        // Função para limpar a seleção
+        // Clear selected crimes
         function clearSelection() {
             selectedCrimes = [];
             document.getElementById('crime-code').value = '';
             updateSelectedCrimes();
         }
 
-        // Função para pesquisar crimes
+        // Search crimes
         function searchCrimes() {
             const searchInput = document.getElementById('search-input').value.trim().toLowerCase();
             const resultsDiv = document.getElementById('search-results');
@@ -548,43 +641,65 @@
             }
         }
 
-        // Função para adicionar notícia
+        // Add news
         function addNews() {
             if (!isLoggedIn) return;
 
             const title = document.getElementById('news-title').value.trim();
             const content = document.getElementById('news-content').value.trim();
             const author = document.getElementById('news-author').value.trim();
-            const imageInput = document.getElementById('news-image');
-            let imageData = '';
+            const imageFileInput = document.getElementById('news-image-file');
+            const imageUrlInput = document.getElementById('news-image-url').value.trim();
 
             if (title && content && author) {
-                if (imageInput.files && imageInput.files[0]) {
+                if (imageFileInput.files && imageFileInput.files[0]) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        imageData = e.target.result;
+                        const imageData = e.target.result;
                         const date = new Date().toLocaleDateString('pt-BR');
                         news.push({ title, content, author, date, image: imageData });
+                        saveNews();
                         document.getElementById('news-title').value = '';
                         document.getElementById('news-content').value = '';
                         document.getElementById('news-author').value = '';
-                        document.getElementById('news-image').value = '';
+                        document.getElementById('news-image-file').value = '';
+                        document.getElementById('news-image-url').value = '';
                         updateNewsList();
                     };
-                    reader.readAsDataURL(imageInput.files[0]);
-                } else {
+                    reader.readAsDataURL(imageFileInput.files[0]);
+                } else if (imageUrlInput) {
                     const date = new Date().toLocaleDateString('pt-BR');
-                    news.push({ title, content, author, date, image: '' });
+                    news.push({ title, content, author, date, image: imageUrlInput });
+                    saveNews();
                     document.getElementById('news-title').value = '';
                     document.getElementById('news-content').value = '';
                     document.getElementById('news-author').value = '';
-                    document.getElementById('news-image').value = '';
+                    document.getElementById('news-image-file').value = '';
+                    document.getElementById('news-image-url').value = '';
+                    updateNewsList();
+                } else {
+                    const date = new Date().toLocaleDateString('pt-BR');
+                    news.push({ title, content, author, date, image: '' });
+                    saveNews();
+                    document.getElementById('news-title').value = '';
+                    document.getElementById('news-content').value = '';
+                    document.getElementById('news-author').value = '';
+                    document.getElementById('news-image-file').value = '';
+                    document.getElementById('news-image-url').value = '';
                     updateNewsList();
                 }
             }
         }
 
-        // Função para atualizar a lista de notícias
+        // Delete news
+        function deleteNews(index) {
+            if (!isLoggedIn) return;
+            news.splice(index, 1);
+            saveNews();
+            updateNewsList();
+        }
+
+        // Update news list
         function updateNewsList() {
             const newsList = document.getElementById('news-list');
             newsList.innerHTML = '';
@@ -596,26 +711,27 @@
 
             news.forEach((item, index) => {
                 const newsItem = document.createElement('div');
-                newsItem.className = 'mb-4';
+                newsItem.className = 'news-card';
                 newsItem.innerHTML = `
-                    <h4 class="text-lg font-semibold text-red-500 cursor-pointer" onclick="toggleNews(${index})">${item.title}</h4>
-                    <p class="text-sm text-gray-400">Publicado em: ${item.date} por ${item.author}</p>
+                    <h4 class="news-title" onclick="toggleNews(${index})">${item.title}</h4>
+                    <p class="news-meta">Publicado em: ${item.date} por ${item.author}</p>
                     <div id="news-content-${index}" class="news-content">
-                        <p>${item.content}</p>
+                        <p>${item.content.replace(/\n/g, '<br>')}</p>
                         ${item.image ? `<img src="${item.image}" class="news-image" alt="Imagem da notícia">` : ''}
                     </div>
+                    ${isLoggedIn ? `<button class="delete-button" onclick="deleteNews(${index})">Apagar Notícia</button>` : ''}
                 `;
                 newsList.appendChild(newsItem);
             });
         }
 
-        // Função para expandir/recolher notícias
+        // Toggle news content
         function toggleNews(index) {
             const content = document.getElementById(`news-content-${index}`);
             content.classList.toggle('open');
         }
 
-        // Inicializar a página
+        // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
             populateCrimesTable();
             updateSelectedCrimes();
@@ -627,7 +743,7 @@
             }
         });
 
-        // Fechar o dropdown quando clicar fora
+        // Close dropdown on outside click
         document.addEventListener('click', (e) => {
             const suggestionsDiv = document.getElementById('suggestions');
             const input = document.getElementById('crime-code');
