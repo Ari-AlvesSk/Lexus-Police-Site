@@ -44,6 +44,7 @@
             font-size: 1.5rem;
             font-weight: bold;
             color: #e53e3e;
+            cursor: pointer;
         }
         .news-meta {
             font-size: 0.875rem;
@@ -51,21 +52,19 @@
             margin-bottom: 0.5rem;
         }
         .news-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
             color: #e2e8f0;
-            line-height: 1.6;
+        }
+        .news-content.open {
+            max-height: 1000px;
         }
         .news-image {
             max-width: 100%;
             height: auto;
             margin-top: 1rem;
             border-radius: 0.375rem;
-        }
-        .news-thumbnail {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 0.375rem;
-            margin-left: 1rem;
         }
         .delete-button {
             background-color: #c53030;
@@ -163,19 +162,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .preview-container {
-            background-color: #2d3748;
-            border: 1px solid #4a5568;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-        .preview-image {
-            max-width: 200px;
-            height: auto;
-            border-radius: 0.375rem;
-            margin-top: 1rem;
-        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans">
@@ -231,26 +217,16 @@
             <div id="news-form" class="mb-6 hidden">
                 <h3 class="text-lg font-semibold text-gray-200 mb-4">Adicionar Notícia</h3>
                 <label for="news-title" class="block text-gray-200 mb-2">Título:</label>
-                <input type="text" id="news-title" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Título da notícia" oninput="updateNewsPreview()">
+                <input type="text" id="news-title" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Título da notícia">
                 <label for="news-content" class="block text-gray-200 mb-2">Conteúdo:</label>
-                <textarea id="news-content" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" rows="6" placeholder="Escreva o conteúdo da notícia" oninput="updateNewsPreview()"></textarea>
+                <textarea id="news-content" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" rows="4" placeholder="Escreva o conteúdo da notícia"></textarea>
                 <label for="news-author" class="block text-gray-200 mb-2">Autor:</label>
-                <input type="text" id="news-author" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Nome do autor" oninput="updateNewsPreview()">
+                <input type="text" id="news-author" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Nome do autor">
                 <label for="news-image-file" class="block text-gray-200 mb-2">Imagem (Upload):</label>
-                <input type="file" id="news-image-file" accept="image/*" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" onchange="updateNewsPreview()">
+                <input type="file" id="news-image-file" accept="image/*" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4">
                 <label for="news-image-url" class="block text-gray-200 mb-2">Imagem (URL):</label>
-                <input type="text" id="news-image-url" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Ex.: https://cdn.discordapp.com/..." oninput="updateNewsPreview()">
-                <div class="preview-container">
-                    <h4 class="text-gray-200 mb-2">Prévia da Notícia</h4>
-                    <div id="news-preview" class="news-card">
-                        <h4 class="news-title">Prévia do Título</h4>
-                        <p class="news-meta">Publicado em: --/--/---- por --</p>
-                        <div class="news-content">
-                            <p>Prévia do conteúdo...</p>
-                        </div>
-                    </div>
-                </div>
-                <button onclick="addNews()" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 mt-4">Publicar Notícia</button>
+                <input type="text" id="news-image-url" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Ex.: https://cdn.discordapp.com/...">
+                <button onclick="addNews()" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Publicar Notícia</button>
             </div>
             <h3 class="text-lg font-semibold text-gray-200 mb-4">Notícias Publicadas</h3>
             <div id="news-list" class="text-gray-200"></div>
@@ -366,173 +342,8 @@
     </footer>
 
     <script>
-        // Crimes array (unchanged)
-        const crimes = [
-            { categoria: "Crimes contra a Pessoa", delito: "Homicídio Culposo", artigo: "Art. 121 §3", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal Leve", artigo: "Art. 129", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal Culposa", artigo: "Art. 129 §6", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Ameaça", artigo: "Art. 147", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Perseguição (Stalking)", artigo: "Art. 147-A", pena: "6-24", multa: 18000, afiancavel: "Sim", fiança: 50000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Exibição de Material Obsceno", artigo: "Art. 300", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Porte de Arma Branca", artigo: "Art. 301", pena: "3-12", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Ameaça com Arma Branca", artigo: "Art. 302", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Disparo de Arma de Fogo (Sem Vítima)", artigo: "Art. 303", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Agressão Verbal em Público", artigo: "Art. 304", pena: "1-3", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Provocação de Tumulto", artigo: "Art. 305", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Exibição de Arma em Público", artigo: "Art. 306", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Intimidação em Evento Público", artigo: "Art. 307", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal Leve em Confronto", artigo: "Art. 308", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Agressão em Estabelecimento Comercial", artigo: "Art. 309", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Provocação de Pânico", artigo: "Art. 310", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Ameaça por Comunicação Eletrônica", artigo: "Art. 311", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Assédio em Via Pública", artigo: "Art. 312", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Exposição de Menor a Risco", artigo: "Art. 313", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Violência em Evento Esportivo", artigo: "Art. 314", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal em Briga de Rua", artigo: "Art. 315", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Ameaça com Arma de Fogo", artigo: "Art. 316", pena: "6-12", multa: 20000, afiancavel: "Sim", fiança: 50000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Coação Física Leve", artigo: "Art. 317", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Exibição de Material Perigoso", artigo: "Art. 318", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Provocação de Conflito em Bar", artigo: "Art. 319", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal por Negligência", artigo: "Art. 320", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Agressão em Transporte Público", artigo: "Art. 321", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Intimidação com Arma Falsa", artigo: "Art. 322", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Assédio em Local de Trabalho", artigo: "Art. 323", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Pessoa", delito: "Provocação de Briga em Clube", artigo: "Art. 324", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Desacato", artigo: "Art. 331", pena: "6-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Falsa Identidade", artigo: "Art. 307", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Desobediência à Ordem Policial", artigo: "Art. 330", pena: "1-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Suborno de Funcionário Público", artigo: "Art. 325", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação da Tranquilidade", artigo: "Art. 65 (LCP)", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Embriaguez em Público", artigo: "Art. 326", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Conduta Desordeira", artigo: "Art. 327", pena: "1-3", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação da Ordem Pública", artigo: "Art. 328", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação com Barulho de Veículo", artigo: "Art. 329", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação com Som Alto", artigo: "Art. 330", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação com Fumaça", artigo: "Art. 331", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação em Evento Público", artigo: "Art. 332", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Jogo de Azar", artigo: "Art. 50 (LCP)", pena: "3-12", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Organização de Evento sem Licença", artigo: "Art. 333", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Organização de Protesto sem Autorização", artigo: "Art. 334", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Organização de Luta Ilegal", artigo: "Art. 335", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Organização de Rinha Ilegal", artigo: "Art. 336", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Bloqueio Ilegal de Via Pública", artigo: "Art. 337", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Desrespeito a Bloqueio Policial", artigo: "Art. 338", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Indevido de Sinal de Emergência", artigo: "Art. 339", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Indevido de Sirene", artigo: "Art. 340", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Indevido de Uniforme", artigo: "Art. 341", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Ilegal de Frequência Policial", artigo: "Art. 342", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Fuga da Polícia (Não Violenta)", artigo: "Art. 343", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Ilegal de Fogos de Artifício", artigo: "Art. 344", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Propaganda Ilegal", artigo: "Art. 345", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Desacato em Operação Policial", artigo: "Art. 346", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Resistência Não Violenta", artigo: "Art. 347", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Interferência em Investigação", artigo: "Art. 348", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Falsa Denúncia", artigo: "Art. 349", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Indevido de Equipamento Policial", artigo: "Art. 350", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação com Drones", artigo: "Art. 351", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Desrespeito a Ordem de Evacuação", artigo: "Art. 352", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Incitação à Desordem", artigo: "Art. 353", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Desacato em Audiência Pública", artigo: "Art. 354", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Organização de Festa Ilegal", artigo: "Art. 355", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Ilegal de Scanner Policial", artigo: "Art. 356", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Obstrução de Via Pública", artigo: "Art. 357", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Provocação de Caos em Evento", artigo: "Art. 358", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Desrespeito a Autoridade em Blitz", artigo: "Art. 359", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra a Ordem Pública", delito: "Falsa Comunicação de Crime", artigo: "Art. 340-A", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Furto Simples", artigo: "Art. 155", pena: "12-24", multa: 18000, afiancavel: "Sim", fiança: 50000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Furto Noturno", artigo: "Art. 155 §1", pena: "16-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Dano Simples", artigo: "Art. 163", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Estelionato Simples", artigo: "Art. 171", pena: "12-24", multa: 18000, afiancavel: "Sim", fiança: 50000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Furto de Veículo", artigo: "Art. 360", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Furto de Baixo Valor (até $500)", artigo: "Art. 361", pena: "1-3", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Passeio Não Autorizado com Veículo", artigo: "Art. 362", pena: "6-12", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Documento Particular", artigo: "Art. 298", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Comércio de Produtos Falsificados", artigo: "Art. 363", pena: "12-24", multa: 18000, afiancavel: "Sim", fiança: 50000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Placa de Veículo", artigo: "Art. 364", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ilegal de Peças de Veículo", artigo: "Art. 365", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Ingressos", artigo: "Art. 366", pena: "6-12", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Assinatura", artigo: "Art. 367", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Cheque", artigo: "Art. 368", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Documento de Veículo", artigo: "Art. 369", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Comprovante de Pagamento", artigo: "Art. 370", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Licença de Evento", artigo: "Art. 371", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Selo de Estacionamento", artigo: "Art. 372", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ilegal de Eletrônicos", artigo: "Art. 373", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Comércio de Produtos Piratas", artigo: "Art. 374", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ilegal de Roupas", artigo: "Art. 375", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ilegal de Acessórios de Veículo", artigo: "Art. 376", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ilegal de Combustível", artigo: "Art. 377", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Comércio de Bebidas sem Licença", artigo: "Art. 378", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Comércio de Alimentos sem Licença", artigo: "Art. 379", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Pichação (Graffiti)", artigo: "Art. 380", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Vandalismo em Propriedade Pública", artigo: "Art. 381", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Invasão de Propriedade Privada", artigo: "Art. 382", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Violação de Domicílio", artigo: "Art. 150", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ambulante sem Licença", artigo: "Art. 383", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Despejo Ilegal de Resíduos", artigo: "Art. 384", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Bilhete de Transporte", artigo: "Art. 385", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Porte Ilegal de Arma de Fogo (Pistola)", artigo: "Art. 14 (Lei 10.826)", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Porte Ilegal de Arma de Fogo (Metralhadora/Fuzil)", artigo: "Art. 386", pena: "12-24", multa: 30000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Posse de Arma de Fogo Descarregada", artigo: "Art. 387", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Uso de Arma de Choque sem Licença", artigo: "Art. 388", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Comércio de Armas de Brinquedo", artigo: "Art. 389", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Equipamento de Vigilância", artigo: "Art. 390", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Câmera Oculta", artigo: "Art. 391", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Equipamento de Hacking", artigo: "Art. 392", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Invasão de Dispositivo Informático", artigo: "Art. 154-A", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Scanner Policial", artigo: "Art. 393", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Frequência Policial", artigo: "Art. 394", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Fabricação de Arma Caseira", artigo: "Art. 395", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Posse de Material Explosivo Leve", artigo: "Art. 396", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Comércio Ilegal de Munição", artigo: "Art. 397", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Equipamento de GPS", artigo: "Art. 398", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra Drogas", delito: "Posse de Droga para Uso Pessoal", artigo: "Art. 28 (Lei 11.343)", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra Drogas", delito: "Tráfico de Pequena Quantidade", artigo: "Art. 399", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra Drogas", delito: "Fabricação de Droga para Uso Pessoal", artigo: "Art. 400", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra Drogas", delito: "Comércio Ilegal de Substância Controlada", artigo: "Art. 401", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra Drogas", delito: "Transporte de Droga para Uso Pessoal", artigo: "Art. 402", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra Drogas", delito: "Posse de Equipamento para Fabricação de Droga", artigo: "Art. 403", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra Drogas", delito: "Venda de Droga em Pequena Escala", artigo: "Art. 404", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra Drogas", delito: "Indução ao Uso de Droga", artigo: "Art. 405", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra Drogas", delito: "Posse de Substância Proibida", artigo: "Art. 406", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra Drogas", delito: "Consumo de Droga em Local Público", artigo: "Art. 407", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra Drogas", delito: "Comércio Ilegal de Medicamento Controlado", artigo: "Art. 408", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra Quadrilhas", delito: "Associação Criminosa (Planejamento Menor)", artigo: "Art. 288", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra Quadrilhas", delito: "Participação em Reunião de Quadrilha", artigo: "Art. 409", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra Quadrilhas", delito: "Recrutamento para Quadrilha", artigo: "Art. 410", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra Quadrilhas", delito: "Planejamento de Furto em Grupo", artigo: "Art. 411", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra Quadrilhas", delito: "Organização de Corrida Ilegal", artigo: "Art. 412", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra Quadrilhas", delito: "Formação de Grupo para Perturbação", artigo: "Art. 413", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra Quadrilhas", delito: "Participação em Racha Ilegal", artigo: "Art. 414", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra Quadrilhas", delito: "Planejamento de Invasão de Propriedade", artigo: "Art. 415", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra Quadrilhas", delito: "Organização de Jogo Ilegal", artigo: "Art. 416", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra Quadrilhas", delito: "Formação de Grupo para Vandalismo", artigo: "Art. 417", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Embriaguez ao Volante", artigo: "Art. 306 (CTB)", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Direção Perigosa", artigo: "Art. 418", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Corrida de Rua Ilegal", artigo: "Art. 419", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Fuga de Local de Acidente", artigo: "Art. 420", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Alteração Ilegal de Veículo", artigo: "Art. 421", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Exibição Perigosa de Veículo", artigo: "Art. 422", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Estacionamento em Local Proibido", artigo: "Art. 423", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Desrespeito a Sinalização de Trânsito", artigo: "Art. 424", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Desrespeito a Limite de Velocidade", artigo: "Art. 425", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Desrespeito a Faixa de Pedestre", artigo: "Art. 426", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Uso Indevido de Farol Alto", artigo: "Art. 427", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra o Trânsito", delito: "Uso Indevido de Placa de Estacionamento", artigo: "Art. 428", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Meio Ambiente", delito: "Pesca Ilegal", artigo: "Art. 429", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Meio Ambiente", delito: "Caça Ilegal em Área Urbana", artigo: "Art. 430", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
-            { categoria: "Crimes contra o Meio Ambiente", delito: "Descarte de Lixo Perigoso", artigo: "Art. 431", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
-            { categoria: "Crimes contra o Meio Ambiente", delito: "Contrabando de Bens Menores", artigo: "Art. 432", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra Drogas", delito: "Tráfico de Grande Quantidade", artigo: "Art. 433", pena: "12-40", multa: 25000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra Drogas", delito: "Homicidio Doloso", artigo: "Art. 434", pena: "12-40", multa: 25000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Furto a Residencia", artigo: "Art. 435", pena: "12-20", multa: 18000, afiancavel: "Sim", fiança: 50000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Furto a Loja De Conveniencia", artigo: "Art. 436", pena: "12-23", multa: 18000, afiancavel: "Sim", fiança: 50000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Furto a Transportadora De Valores", artigo: "Art. 437", pena: "12-27", multa: 18000, afiancavel: "Sim", fiança: 50000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Furto a Caixa Eletronico", artigo: "Art. 438", pena: "12-21", multa: 18000, afiancavel: "Sim", fiança: 50000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Furto a Banco", artigo: "Art. 439", pena: "12-40", multa: 30000, afiancavel: "Sim", fiança: 100000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Dinheiro Sujo (Notas Marcadas)", artigo: "Art. 369", pena: "12-20", multa: 20000, afiancavel: "Sim", fiança: 60000 },
-            { categoria: "Crimes contra o Patrimônio", delito: "Material Explosivo", artigo: "Art. 370", pena: "12-13", multa: 2000, afiancavel: "Sim", fiança: 30000 }
-        ];
+        // Crimes array (to be provided by you)
+        const crimes = [];
 
         // Users array
         let users = JSON.parse(localStorage.getItem('users')) || [
@@ -544,7 +355,7 @@
         let news = JSON.parse(localStorage.getItem('news')) || [
             {
                 title: "Recrutamento Aberto para a Polícia de Lexus RolePlay",
-                content: "A Polícia de Lexus RolePlay está com inscrições abertas para novos oficiais! Buscamos cidadãos comprometidos, corajosos e dispostos a manter a ordem e a segurança nas ruas de Los Santos. Requisitos: ser maior de 18 anos no roleplay, possuir habilitação válida para veículos (CNH categoria B, no mínimo), não ter antecedentes criminais graves (crimes inafiançáveis), ter disponibilidade para treinamentos e operações em horários variados, e compromisso com as regras do servidor e do código penal de Lexus. Para se inscrever, acesse o canal oficial da Polícia no Discord do servidor Lexus RolePlay, preencha o formulário de inscrição no canal #recrutamento, e participe da entrevista e do treinamento prático agendados pela equipe. Benefícios incluem treinamento completo acordo com as regras do servidor e do código penal de Lexus. Para se inscrever, acesse o canal oficial da Polícia no Discord do servidor Lexus RolePlay, preencha o formulário de inscrição no canal #recrutamento, e participe da entrevista e do treinamento prático agendados pela equipe. Benefícios incluem treinamento completo em operações policiais, oportunidade de ascensão hierárquica, equipamentos e viaturas de ponta, e integração com uma equipe dedicada e respeitada no servidor. Não perca essa chance de fazer parte da elite policial de Los Santos! Inscrições abertas até 31/07/2025. Para dúvidas, contate o comando pelo Discord ou no QG da Polícia em Los Santos.",
+                content: "A Polícia de Lexus RolePlay está com inscrições abertas para novos oficiais! Buscamos cidadãos comprometidos, corajosos e dispostos a manter a ordem e a segurança nas ruas de Los Santos. Requisitos: ser maior de 18 anos no roleplay, possuir habilitação válida para veículos (CNH categoria B, no mínimo), não ter antecedentes criminais graves (crimes inafiançáveis), ter disponibilidade para treinamentos e operações em horários variados, e compromisso com as regras do servidor e do código penal de Lexus. Para se inscrever, acesse o canal oficial da Polícia no Discord do servidor Lexus RolePlay, preencha o formulário de inscrição no canal #recrutamento, e participe da entrevista e do treinamento prático agendados pela equipe. Benefícios incluem treinamento completo em operações policiais, oportunidade de ascensão hierárquica, equipamentos e viaturas de ponta, e integração com uma equipe dedicada e respeitada no servidor. Não perca essa chance de fazer parte da elite policial de Los Santos! Inscrições abertas até 31/07/2025. Para dúvidas, contate o comando pelo Discord ou no QG da Polícia em Los Santos.",
                 author: "Comandante João Silva",
                 date: "16/07/2025",
                 image: "https://cdn.discordapp.com/attachments/1379269843458719766/1394908923315748875/pmerj.png?ex=68792e6b&is=6877dceb&hm=0470ba69d550125fe2ab6deb613af50f180f7bf98228d99fb2b319d83032e3ea&"
@@ -654,163 +465,38 @@
                 searchSection.classList.remove('hidden');
                 crimesLink.classList.remove('hidden');
                 calculatorLink.classList.remove('hidden');
-                searchLink.class
-                if (currentUser) {
-                // Officers and commanders can see these sections
-                crimesSection.classList.remove('hidden');
-                calculatorSection.classList.remove('hidden');
-                searchSection.classList.remove('hidden');
-                crimesLink.classList.remove('hidden');
-                calculatorLink.classList.remove('hidden');
                 searchLink.classList.remove('hidden');
 
-                // Only commanders can see the manage access section and news form
+                // Only ari and wl can manage news
+                if (currentUser.username === 'ari' || currentUser.username === 'wl') {
+                    newsForm.classList.remove('hidden');
+                } else {
+                    newsForm.classList.add('hidden');
+                }
+
+                // All commanders can see manage access
                 if (currentUser.role === 'commander') {
                     manageAccessSection.classList.remove('hidden');
                     manageAccessLink.classList.remove('hidden');
-                    newsForm.classList.remove('hidden');
-                    roleSelect.innerHTML = `
-                        <option value="officer">Oficial</option>
-                        <option value="commander">Comandante</option>
-                    `;
+                    // Only ari and wl can assign commander role
+                    if (currentUser.username === 'ari' || currentUser.username === 'wl') {
+                        roleSelect.innerHTML = `
+                            <option value="officer">Oficial</option>
+                            <option value="commander">Comandante</option>
+                        `;
+                    } else {
+                        roleSelect.innerHTML = `<option value="officer">Oficial</option>`;
+                    }
                 } else {
-                    roleSelect.innerHTML = `<option value="officer">Oficial</option>`;
+                    manageAccessSection.classList.add('hidden');
+                    manageAccessLink.classList.add('hidden');
                 }
-
-                updateNewsList();
-                loadCrimes();
             }
+            updateNewsList();
         }
 
-        // Update news list with enhanced display
-        function updateNewsList() {
-            const newsList = document.getElementById('news-list');
-            newsList.innerHTML = '';
-            news.forEach((item, index) => {
-                const newsItem = document.createElement('div');
-                newsItem.className = 'news-card';
-                newsItem.innerHTML = `
-                    <div class="flex">
-                        <div class="flex-1">
-                            <h4 class="news-title">${item.title}</h4>
-                            <p class="news-meta">Publicado em: ${item.date} por ${item.author}</p>
-                            <div class="news-content">${item.content}</div>
-                            ${item.image ? `<img src="${item.image}" alt="Imagem da notícia" class="news-image">` : ''}
-                        </div>
-                        ${item.image ? `<img src="${item.image}" alt="Thumbnail" class="news-thumbnail">` : ''}
-                    </div>
-                    ${currentUser && currentUser.role === 'commander' ? `<button class="delete-button" onclick="deleteNews(${index})">Excluir Notícia</button>` : ''}
-                `;
-                newsList.appendChild(newsItem);
-            });
-        }
-
-        // Update news preview in real-time
-        function updateNewsPreview() {
-            const title = document.getElementById('news-title').value.trim() || 'Prévia do Título';
-            const content = document.getElementById('news-content').value.trim() || 'Prévia do conteúdo...';
-            const author = document.getElementById('news-author').value.trim() || '--';
-            const imageFileInput = document.getElementById('news-image-file');
-            const imageUrlInput = document.getElementById('news-image-url').value.trim();
-            const preview = document.getElementById('news-preview');
-            let imageSrc = '';
-
-            // Prioritize file input over URL
-            if (imageFileInput.files && imageFileInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    imageSrc = e.target.result;
-                    preview.innerHTML = `
-                        <h4 class="news-title">${title}</h4>
-                        <p class="news-meta">Publicado em: --/--/---- por ${author}</p>
-                        <div class="news-content">${content}</div>
-                        <img src="${imageSrc}" alt="Prévia da imagem" class="preview-image">
-                    `;
-                };
-                reader.readAsDataURL(imageFileInput.files[0]);
-            } else if (imageUrlInput) {
-                imageSrc = imageUrlInput;
-                preview.innerHTML = `
-                    <h4 class="news-title">${title}</h4>
-                    <p class="news-meta">Publicado em: --/--/---- por ${author}</p>
-                    <div class="news-content">${content}</div>
-                    <img src="${imageSrc}" alt="Prévia da imagem" class="preview-image">
-                `;
-            } else {
-                preview.innerHTML = `
-                    <h4 class="news-title">${title}</h4>
-                    <p class="news-meta">Publicado em: --/--/---- por ${author}</p>
-                    <div class="news-content">${content}</div>
-                `;
-            }
-        }
-
-        // Add news
-        function addNews() {
-            const title = document.getElementById('news-title').value.trim();
-            const content = document.getElementById('news-content').value.trim();
-            const author = document.getElementById('news-author').value.trim();
-            const imageFileInput = document.getElementById('news-image-file');
-            const imageUrlInput = document.getElementById('news-image-url').value.trim();
-
-            if (title && content && author) {
-                let image = '';
-                if (imageFileInput.files && imageFileInput.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        image = e.target.result;
-                        const date = new Date().toLocaleDateString('pt-BR');
-                        news.push({ title, content, author, date, image });
-                        saveNews();
-                        updateNewsList();
-                        document.getElementById('news-title').value = '';
-                        document.getElementById('news-content').value = '';
-                        document.getElementById('news-author').value = '';
-                        document.getElementById('news-image-file').value = '';
-                        document.getElementById('news-image-url').value = '';
-                        updateNewsPreview();
-                    };
-                    reader.readAsDataURL(imageFileInput.files[0]);
-                } else if (imageUrlInput) {
-                    image = imageUrlInput;
-                    const date = new Date().toLocaleDateString('pt-BR');
-                    news.push({ title, content, author, date, image });
-                    saveNews();
-                    updateNewsList();
-                    document.getElementById('news-title').value = '';
-                    document.getElementById('news-content').value = '';
-                    document.getElementById('news-author').value = '';
-                    document.getElementById('news-image-file').value = '';
-                    document.getElementById('news-image-url').value = '';
-                    updateNewsPreview();
-                } else {
-                    const date = new Date().toLocaleDateString('pt-BR');
-                    news.push({ title, content, author, date });
-                    saveNews();
-                    updateNewsList();
-                    document.getElementById('news-title').value = '';
-                    document.getElementById('news-content').value = '';
-                    document.getElementById('news-author').value = '';
-                    document.getElementById('news-image-file').value = '';
-                    document.getElementById('news-image-url').value = '';
-                    updateNewsPreview();
-                }
-            } else {
-                alert('Por favor, preencha todos os campos obrigatórios (Título, Conteúdo, Autor).');
-            }
-        }
-
-        // Delete news
-        function deleteNews(index) {
-            if (confirm('Tem certeza que deseja excluir esta notícia?')) {
-                news.splice(index, 1);
-                saveNews();
-                updateNewsList();
-            }
-        }
-
-        // Load crimes table
-        function loadCrimes() {
+        // Populate crimes table
+        function populateCrimesTable() {
             const tableBody = document.getElementById('crimes-table');
             tableBody.innerHTML = '';
             crimes.forEach(crime => {
@@ -821,136 +507,314 @@
                     <td class="py-2 px-4">${crime.delito}</td>
                     <td class="py-2 px-4">${crime.artigo}</td>
                     <td class="py-2 px-4">${crime.pena}</td>
-                    <td class="py-2 px-4">$${crime.multa.toLocaleString('pt-BR')}</td>
+                    <td class="py-2 px-4">$${crime.multa.toLocaleString()}</td>
                     <td class="py-2 px-4">${crime.afiancavel}</td>
-                    <td class="py-2 px-4">$${crime.fiança.toLocaleString('pt-BR')}</td>
+                    <td class="py-2 px-4">$${crime.fiança.toLocaleString()}</td>
                 `;
                 tableBody.appendChild(row);
             });
         }
 
-        // Show crime suggestions
+        // Show suggestions for penal calculator
         function showSuggestions() {
-            const input = document.getElementById('crime-code').value.toLowerCase().trim();
-            const suggestions = document.getElementById('suggestions');
-            suggestions.innerHTML = '';
-            if (input) {
-                const filteredCrimes = crimes.filter(crime =>
-                    crime.delito.toLowerCase().includes(input) || crime.artigo.toLowerCase().includes(input)
-                );
-                if (filteredCrimes.length > 0) {
-                    suggestions.classList.remove('hidden');
-                    filteredCrimes.forEach(crime => {
-                        const div = document.createElement('div');
-                        div.className = 'p-2 cursor-pointer hover:bg-red-600 dropdown-item';
-                        div.textContent = `${crime.delito} (${crime.artigo})`;
-                        div.onclick = () => selectCrime(crime);
-                        suggestions.appendChild(div);
-                    });
-                } else {
-                    suggestions.classList.add('hidden');
-                }
-            } else {
-                suggestions.classList.add('hidden');
+            const input = document.getElementById('crime-code').value.trim().toLowerCase();
+            const suggestionsDiv = document.getElementById('suggestions');
+            suggestionsDiv.innerHTML = '';
+            suggestionsDiv.classList.add('hidden');
+
+            if (input.length === 0) return;
+
+            const filteredCrimes = crimes.filter(crime => 
+                crime.artigo.toLowerCase().includes(input) || 
+                crime.delito.toLowerCase().includes(input)
+            ).slice(0, 5);
+
+            if (filteredCrimes.length > 0) {
+                suggestionsDiv.classList.remove('hidden');
+                filteredCrimes.forEach(crime => {
+                    const div = document.createElement('div');
+                    div.className = 'dropdown-item p-2 cursor-pointer text-gray-200';
+                    div.textContent = `${crime.artigo} - ${crime.delito}`;
+                    div.onclick = () => {
+                        document.getElementById('crime-code').value = crime.artigo;
+                        suggestionsDiv.innerHTML = '';
+                        suggestionsDiv.classList.add('hidden');
+                        addCrime(crime);
+                    };
+                    suggestionsDiv.appendChild(div);
+                });
             }
         }
 
-        // Select crime for calculator
-        function selectCrime(crime) {
-            selectedCrimes.push(crime);
-            document.getElementById('crime-code').value = '';
-            document.getElementById('suggestions').classList.add('hidden');
-            updateSelectedCrimes();
+        // Add crime to selected list
+        function addCrime(crime = null) {
+            const codeInput = document.getElementById('crime-code').value.trim();
+            const selectedCrime = crime || crimes.find(c => c.artigo.toLowerCase() === codeInput.toLowerCase());
+
+            if (selectedCrime) {
+                selectedCrimes.push(selectedCrime);
+                document.getElementById('crime-code').value = '';
+                updateSelectedCrimes();
+            } else {
+                const selectedCrimesDiv = document.getElementById('selected-crimes');
+                selectedCrimesDiv.innerHTML = '<p class="text-red-500">Código ou crime não encontrado. Verifique o artigo ou nome informado.</p>';
+            }
         }
 
         // Update selected crimes display
         function updateSelectedCrimes() {
             const selectedCrimesDiv = document.getElementById('selected-crimes');
-            selectedCrimesDiv.innerHTML = '<h3 class="text-lg font-semibold text-gray-200 mb-2">Crimes Selecionados:</h3>';
-            let totalPenaMin = 0, totalPenaMax = 0, totalMulta = 0, totalFiança = 0;
+            const totalsDiv = document.getElementById('totals');
+            selectedCrimesDiv.innerHTML = '';
 
-            selectedCrimes.forEach((crime, index) => {
-                const [penaMin, penaMax] = crime.pena.split('-').map(Number);
-                totalPenaMin += penaMin || 0;
-                totalPenaMax += penaMax || penaMin || 0;
-                totalMulta += crime.multa || 0;
-                totalFiança += crime.afiancavel === 'Sim' ? crime.fiança : 0;
+            if (selectedCrimes.length === 0) {
+                selectedCrimesDiv.innerHTML = '<p class="text-gray-400">Nenhum crime selecionado.</p>';
+                totalsDiv.innerHTML = '';
+                return;
+            }
 
-                const crimeDiv = document.createElement('div');
-                crimeDiv.className = 'mb-2';
-                crimeDiv.innerHTML = `
-                    ${crime.delito} (${crime.artigo}) - Pena: ${crime.pena} meses, Multa: $${crime.multa.toLocaleString('pt-BR')}, 
-                    Fiança: ${crime.afiancavel === 'Sim' ? '$' + crime.fiança.toLocaleString('pt-BR') : 'Não'}
-                    <button onclick="removeCrime(${index})" class="text-red-500 ml-2">Remover</button>
+            let totalPenaltyMin = 0;
+            let totalPenaltyMax = 0;
+            let totalFine = 0;
+            let totalBail = 0;
+            let isBailable = selectedCrimes.every(crime => crime.afiancavel === "Sim");
+
+            let tableHTML = '<table class="w-full bg-gray-800 rounded-lg"><thead><tr class="bg-red-900 text-white"><th class="py-2 px-4">Categoria</th><th class="py-2 px-4">Delito</th><th class="py-2 px-4">Artigo</th><th class="py-2 px-4">Pena</th><th class="py-2 px-4">Multa</th><th class="py-2 px-4">Afiançável</th><th class="py-2 px-4">Fiança</th></tr></thead><tbody>';
+            selectedCrimes.forEach(crime => {
+                const [min, max] = crime.pena.split('-').map(Number);
+                totalPenaltyMin += min || 0;
+                totalPenaltyMax += max || min || 0;
+                totalFine += crime.multa;
+                totalBail += crime.fiança;
+                tableHTML += `
+                    <tr class="table-row">
+                        <td class="py-2 px-4">${crime.categoria}</td>
+                        <td class="py-2 px-4">${crime.delito}</td>
+                        <td class="py-2 px-4">${crime.artigo}</td>
+                        <td class="py-2 px-4">${crime.pena}</td>
+                        <td class="py-2 px-4">$${crime.multa.toLocaleString()}</td>
+                        <td class="py-2 px-4">${crime.afiancavel}</td>
+                        <td class="py-2 px-4">$${crime.fiança.toLocaleString()}</td>
+                    </tr>
                 `;
-                selectedCrimesDiv.appendChild(crimeDiv);
             });
+            tableHTML += '</tbody></table>';
+            selectedCrimesDiv.innerHTML = tableHTML;
 
-            document.getElementById('totals').innerHTML = `
-                <h3 class="text-lg font-semibold text-gray-200 mt-4">Totais:</h3>
-                <p>Pena Total: ${totalPenaMin}-${totalPenaMax} meses</p>
-                <p>Multa Total: $${totalMulta.toLocaleString('pt-BR')}</p>
-                <p>Fiança Total: $${totalFiança.toLocaleString('pt-BR')}</p>
+            totalsDiv.innerHTML = `
+                <p><strong>Total Pena:</strong> ${totalPenaltyMin}-${totalPenaltyMax} meses</p>
+                <p><strong>Total Multa:</strong> $${totalFine.toLocaleString()}</p>
+                <p><strong>Afiançável:</strong> ${isBailable ? 'Sim' : 'Não'}</p>
+                <p><strong>Total Fiança:</strong> ${isBailable ? '$' + totalBail.toLocaleString() : 'N/A'}</p>
             `;
-        }
-
-        // Remove crime from selected list
-        function removeCrime(index) {
-            selectedCrimes.splice(index, 1);
-            updateSelectedCrimes();
         }
 
         // Clear selected crimes
         function clearSelection() {
             selectedCrimes = [];
+            document.getElementById('crime-code').value = '';
             updateSelectedCrimes();
-        }
-
-        // Add crime to calculator
-        function addCrime() {
-            const input = document.getElementById('crime-code').value.toLowerCase().trim();
-            const crime = crimes.find(c => c.delito.toLowerCase() === input || c.artigo.toLowerCase() === input);
-            if (crime) {
-                selectCrime(crime);
-            } else {
-                alert('Crime não encontrado. Por favor, selecione um crime válido da lista.');
-            }
         }
 
         // Search crimes
         function searchCrimes() {
-            const input = document.getElementById('search-input').value.toLowerCase().trim();
-            const results = document.getElementById('search-results');
-            results.innerHTML = '';
-            if (input) {
-                const filteredCrimes = crimes.filter(crime =>
-                    crime.delito.toLowerCase().includes(input) ||
-                    crime.artigo.toLowerCase().includes(input) ||
-                    crime.categoria.toLowerCase().includes(input)
-                );
-                if (filteredCrimes.length > 0) {
-                    filteredCrimes.forEach(crime => {
-                        const div = document.createElement('div');
-                        div.className = 'mb-2';
-                        div.innerHTML = `
-                            <strong>${crime.delito}</strong> (${crime.artigo})<br>
-                            Categoria: ${crime.categoria}<br>
-                            Pena: ${crime.pena} meses<br>
-                            Multa: $${crime.multa.toLocaleString('pt-BR')}<br>
-                            Afiançável: ${crime.afiancavel}<br>
-                            Fiança: $${crime.fiança.toLocaleString('pt-BR')}
-                        `;
-                        results.appendChild(div);
-                    });
-                } else {
-                    results.innerHTML = '<p class="text-red-500">Nenhum crime encontrado.</p>';
-                }
+            const searchInput = document.getElementById('search-input').value.trim().toLowerCase();
+            const resultsDiv = document.getElementById('search-results');
+            const filteredCrimes = crimes.filter(crime => 
+                crime.delito.toLowerCase().includes(searchInput) ||
+                crime.artigo.toLowerCase().includes(searchInput) ||
+                crime.categoria.toLowerCase().includes(searchInput)
+            );
+
+            if (filteredCrimes.length > 0) {
+                let resultsHTML = '<table class="w-full bg-gray-800 rounded-lg"><thead><tr class="bg-red-900 text-white"><th class="py-2 px-4">Categoria</th><th class="py-2 px-4">Delito</th><th class="py-2 px-4">Artigo</th><th class="py-2 px-4">Pena</th><th class="py-2 px-4">Multa</th><th class="py-2 px-4">Afiançável</th><th class="py-2 px-4">Fiança</th></tr></thead><tbody>';
+                filteredCrimes.forEach(crime => {
+                    resultsHTML += `
+                        <tr class="table-row">
+                            <td class="py-2 px-4">${crime.categoria}</td>
+                            <td class="py-2 px-4">${crime.delito}</td>
+                            <td class="py-2 px-4">${crime.artigo}</td>
+                            <td class="py-2 px-4">${crime.pena}</td>
+                            <td class="py-2 px-4">$${crime.multa.toLocaleString()}</td>
+                            <td class="py-2 px-4">${crime.afiancavel}</td>
+                            <td class="py-2 px-4">$${crime.fiança.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                resultsHTML += '</tbody></table>';
+                resultsDiv.innerHTML = resultsHTML;
             } else {
-                results.innerHTML = '<p class="text-red-500">Por favor, insira um termo de pesquisa.</p>';
+                resultsDiv.innerHTML = '<p class="text-red-500">Nenhum crime encontrado para o termo pesquisado.</p>';
             }
         }
 
-        // Show tab for manage access
+        // Add news
+        function addNews() {
+            if (!currentUser || (currentUser.username !== 'ari' && currentUser.username !== 'wl')) return;
+
+            const title = document.getElementById('news-title').value.trim();
+            const content = document.getElementById('news-content').value.trim();
+            const author = document.getElementById('news-author').value.trim();
+            const imageFileInput = document.getElementById('news-image-file');
+            const imageUrlInput = document.getElementById('news-image-url').value.trim();
+
+            if (title && content && author) {
+                if (imageFileInput.files && imageFileInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imageData = e.target.result;
+                        const date = new Date().toLocaleDateString('pt-BR');
+                        news.push({ title, content, author, date, image: imageData });
+                        saveNews();
+                        document.getElementById('news-title').value = '';
+                        document.getElementById('news-content').value = '';
+                        document.getElementById('news-author').value = '';
+                        document.getElementById('news-image-file').value = '';
+                        document.getElementById('news-image-url').value = '';
+                        updateNewsList();
+                    };
+                    reader.readAsDataURL(imageFileInput.files[0]);
+                } else if (imageUrlInput) {
+                    const date = new Date().toLocaleDateString('pt-BR');
+                    news.push({ title, content, author, date, image: imageUrlInput });
+                    saveNews();
+                    document.getElementById('news-title').value = '';
+                    document.getElementById('news-content').value = '';
+                    document.getElementById('news-author').value = '';
+                    document.getElementById('news-image-file').value = '';
+                    document.getElementById('news-image-url').value = '';
+                    updateNewsList();
+                } else {
+                    const date = new Date().toLocaleDateString('pt-BR');
+                    news.push({ title, content, author, date, image: '' });
+                    saveNews();
+                    document.getElementById('news-title').value = '';
+                    document.getElementById('news-content').value = '';
+                    document.getElementById('news-author').value = '';
+                    document.getElementById('news-image-file').value = '';
+                    document.getElementById('news-image-url').value = '';
+                    updateNewsList();
+                }
+            }
+        }
+
+        // Delete news
+        function deleteNews(index) {
+            if (!currentUser || (currentUser.username !== 'ari' && currentUser.username !== 'wl')) return;
+            news.splice(index, 1);
+            saveNews();
+            updateNewsList();
+        }
+
+        // Update news list
+        function updateNewsList() {
+            const newsList = document.getElementById('news-list');
+            newsList.innerHTML = '';
+
+            if (news.length === 0) {
+                newsList.innerHTML = '<p class="text-gray-400">Nenhuma notícia publicada.</p>';
+                return;
+            }
+
+            news.forEach((item, index) => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'news-card';
+                newsItem.innerHTML = `
+                    <h4 class="news-title" onclick="toggleNews(${index})">${item.title}</h4>
+                    <p class="news-meta">Publicado em: ${item.date} por ${item.author}</p>
+                    <div id="news-content-${index}" class="news-content">
+                        <p>${item.content.replace(/\n/g, '<br>')}</p>
+                        ${item.image ? `<img src="${item.image}" class="news-image" alt="Imagem da notícia">` : ''}
+                    </div>
+                    ${currentUser && (currentUser.username === 'ari' || currentUser.username === 'wl') ? `<button class="delete-button" onclick="deleteNews(${index})">Apagar Notícia</button>` : ''}
+                `;
+                newsList.appendChild(newsItem);
+            });
+        }
+
+        // Toggle news content
+        function toggleNews(index) {
+            const content = document.getElementById(`news-content-${index}`);
+            content.classList.toggle('open');
+        }
+
+        // Create user
+        function createUser() {
+            if (!currentUser || currentUser.role !== 'commander') return;
+
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value.trim();
+            const role = document.getElementById('user-role').value;
+            const error = document.getElementById('create-user-error');
+
+            if (!username || !password) {
+                error.textContent = 'Usuário e senha são obrigatórios.';
+                error.classList.remove('hidden');
+                return;
+            }
+
+            if (users.find(u => u.username === username)) {
+                error.textContent = 'Usuário já existe.';
+                error.classList.remove('hidden');
+                return;
+            }
+
+            users.push({ username, password, role });
+            saveUsers();
+            document.getElementById('new-username').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('user-role').value = 'officer';
+            error.classList.add('hidden');
+            searchUsers();
+        }
+
+        // Search users
+        function searchUsers() {
+            const searchInput = document.getElementById('user-search').value.trim().toLowerCase();
+            const userList = document.getElementById('user-list');
+            const filteredUsers = users.filter(user => user.username.toLowerCase().includes(searchInput));
+
+            userList.innerHTML = '';
+
+            if (filteredUsers.length === 0) {
+                userList.innerHTML = '<p class="text-gray-400">Nenhum usuário encontrado.</p>';
+                return;
+            }
+
+            let tableHTML = '<table class="w-full bg-gray-800 rounded-lg"><thead><tr class="bg-red-900 text-white"><th class="py-2 px-4">Selecionar</th><th class="py-2 px-4">Usuário</th><th class="py-2 px-4">Função</th></tr></thead><tbody>';
+            filteredUsers.forEach((user, index) => {
+                if (user.username !== 'ari' && user.username !== 'wl') {
+                    tableHTML += `
+                        <tr class="table-row">
+                            <td class="py-2 px-4"><input type="checkbox" class="user-checkbox" data-username="${user.username}"></td>
+                            <td class="py-2 px-4">${user.username}</td>
+                            <td class="py-2 px-4">${user.role === 'commander' ? 'Comandante' : 'Oficial'}</td>
+                        </tr>
+                    `;
+                }
+            });
+            tableHTML += '</tbody></table>';
+            userList.innerHTML = tableHTML;
+        }
+
+        // Delete selected users
+        function deleteSelectedUsers() {
+            if (!currentUser || currentUser.role !== 'commander') return;
+
+            const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+            const usernamesToDelete = Array.from(checkboxes).map(cb => cb.dataset.username);
+
+            if (usernamesToDelete.length === 0) {
+                document.getElementById('user-list').innerHTML = '<p class="text-red-500">Nenhum usuário selecionado.</p>';
+                return;
+            }
+
+            users = users.filter(user => !usernamesToDelete.includes(user.username));
+            saveUsers();
+            searchUsers();
+        }
+
+        // Show tab
         function showTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -958,127 +822,35 @@
             document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
         }
 
-        // Create new user
-        function createUser() {
-            const username = document.getElementById('new-username').value.trim();
-            const password = document.getElementById('new-password').value.trim();
-            const role = document.getElementById('user-role').value;
-            const error = document.getElementById('create-user-error');
-
-            if (username && password) {
-                if (users.find(u => u.username === username)) {
-                    error.textContent = 'Usuário já existe.';
-                    error.classList.remove('hidden');
-                } else {
-                    users.push({ username, password, role });
-                    saveUsers();
-                    document.getElementById('new-username').value = '';
-                    document.getElementById('new-password').value = '';
-                    error.classList.add('hidden');
-                    alert('Usuário criado com sucesso!');
-                }
-            } else {
-                error.textContent = 'Por favor, preencha todos os campos.';
-                error.classList.remove('hidden');
-            }
-        }
-
-        // Search users for removal
-        function searchUsers() {
-            const input = document.getElementById('user-search').value.toLowerCase().trim();
-            const userList = document.getElementById('user-list');
-            userList.innerHTML = '';
-            if (input) {
-                const filteredUsers = users.filter(u => u.username.toLowerCase().includes(input));
-                if (filteredUsers.length > 0) {
-                    filteredUsers.forEach(user => {
-                        if (user.username !== currentUser.username) {
-                            const div = document.createElement('div');
-                            div.className = 'mb-2';
-                            div.innerHTML = `
-                                <input type="checkbox" class="user-checkbox" data-username="${user.username}">
-                                ${user.username} (${user.role === 'commander' ? 'Comandante' : 'Oficial'})
-                            `;
-                            userList.appendChild(div);
-                        }
-                    });
-                } else {
-                    userList.innerHTML = '<p class="text-red-500">Nenhum usuário encontrado.</p>';
-                }
-            }
-        }
-
-        // Delete selected users
-        function deleteSelectedUsers() {
-            const checkboxes = document.querySelectorAll('.user-checkbox:checked');
-            if (checkboxes.length > 0) {
-                if (confirm('Tem certeza que deseja remover os usuários selecionados?')) {
-                    checkboxes.forEach(checkbox => {
-                        const username = checkbox.dataset.username;
-                        users = users.filter(u => u.username !== username);
-                    });
-                    saveUsers();
-                    searchUsers();
-                }
-            } else {
-                alert('Por favor, selecione pelo menos um usuário para remover.');
-            }
-        }
-
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
+            populateCrimesTable();
+            updateSelectedCrimes();
             updateNewsList();
-            if (currentUser) {
-                updateUIForUser();
+            if (!currentUser) {
+                document.getElementById('news-form').classList.add('hidden');
+                document.getElementById('crimes').classList.add('hidden');
+                document.getElementById('calculator').classList.add('hidden');
+                document.getElementById('search').classList.add('hidden');
+                document.getElementById('manage-access').classList.add('hidden');
+                document.getElementById('crimes-link').classList.add('hidden');
+                document.getElementById('calculator-link').classList.add('hidden');
+                document.getElementById('search-link').classList.add('hidden');
+                document.getElementById('manage-access-link').classList.add('hidden');
+                document.getElementById('auth-nav').classList.add('hidden');
+                window.location.hash = '#login'; // Default to login for non-logged-in users
             }
-            // Handle hash navigation
-            window.addEventListener('hashchange', () => {
-                const sections = ['home', 'news', 'crimes', 'calculator', 'search', 'manage-access', 'login'];
-                sections.forEach(section => {
-                    const el = document.getElementById(section);
-                    if (window.location.hash === `#${section}`) {
-                        el.classList.remove('hidden');
-                    } else {
-                        el.classList.add('hidden');
-                    }
-                });
-            });
-            // Trigger initial hash navigation
-            if (!window.location.hash) {
-                window.location.hash = '#home';
-            } else {
-                window.dispatchEvent(new Event('hashchange'));
+            searchUsers();
+        });
+
+        // Close dropdown on outside click
+        document.addEventListener('click', (e) => {
+            const suggestionsDiv = document.getElementById('suggestions');
+            const input = document.getElementById('crime-code');
+            if (!suggestionsDiv.contains(e.target) && e.target !== input) {
+                suggestionsDiv.classList.add('hidden');
             }
         });
     </script>
 </body>
 </html>
-```
-
-### Key Improvements to the News System
-1. **Live Preview in News Form**:
-   - Added a live preview section (`updateNewsPreview`) that updates in real-time as the user types the title, content, author, or uploads/selects an image.
-   - The preview is styled as a `news-card` to match the published news display.
-   - Supports both file uploads (via `FileReader` for local images) and image URLs, with file input taking precedence.
-
-2. **Enhanced News Display**:
-   - News items are now displayed in `news-card` divs with full content, proper formatting (title, meta, content, and image), and a thumbnail preview on the right.
-   - Added hover effects (`transform` and `box-shadow`) for better interactivity.
-   - Images are displayed full-width below the content with rounded corners for a polished look.
-   - Commanders can delete news items with a styled "Excluir Notícia" button.
-
-3. **Image Thumbnail Preview**:
-   - Added a thumbnail image in the news display (100x100px, right-aligned) if an image is provided.
-   - Thumbnails use `object-fit: cover` to ensure consistent appearance.
-
-4. **CSS Enhancements**:
-   - Added styles for `news-card`, `news-title`, `news-meta`, `news-content`, `news-image`, `news-thumbnail`, `delete-button`, and `preview-container` to improve the visual presentation.
-   - Ensured responsive design with Tailwind CSS and custom styles.
-
-### Other Notes
-- The rest of the code (crimes, calculator, search, and user management) remains unchanged from your original system but is included for completeness.
-- The news form is only visible to commanders, as per the original logic.
-- News items are stored in `localStorage` with the same structure, now including an optional `image` field (either a data URL or external URL).
-- The system prevents commanders from deleting their own accounts in the user management section for security.
-
-Let me know if you need further tweaks or additional features!
