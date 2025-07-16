@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -97,7 +58,7 @@
             color: #e2e8f0;
         }
         .news-content.open {
-            max-height: 1000px; /* Adjust as needed */
+            max-height: 1000px;
         }
         .news-image {
             max-width: 100%;
@@ -115,6 +76,91 @@
         }
         .delete-button:hover {
             background-color: #9b2c2c;
+        }
+        .tab-button {
+            background-color: #4a5568;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            margin-right: 0.5rem;
+        }
+        .tab-button.active {
+            background-color: #e53e3e;
+        }
+        .tab-button:hover {
+            background-color: #718096;
+        }
+        .login-container {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            border: 2px solid #e53e3e;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+        .login-badge {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            background: url('https://media.discordapp.net/attachments/1379269843458719766/1394140869073961041/sem_fundo.png?ex=68785d5d&is=68770bdd&hm=74ebc9cefb0e7d9afc2a7dc5a38d90fde59e9eb5543db45559ec4d96cc6886a9&=&format=webp&quality=lossless&width=438&height=438') no-repeat center;
+            background-size: contain;
+            filter: url(#gradient-filter);
+        }
+        .login-input {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            width: 100%;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .login-input:focus {
+            border-color: #e53e3e;
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.3);
+            outline: none;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #a0aec0;
+        }
+        .password-toggle:hover {
+            color: #e53e3e;
+        }
+        .login-button {
+            background-color: #e53e3e;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            width: 100%;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+        }
+        .login-button:hover {
+            background-color: #c53030;
+        }
+        .spinner {
+            display: none;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #e53e3e;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -144,18 +190,25 @@
 
     <!-- Navigation -->
     <nav class="bg-gray-800 text-white py-2">
-        <div class="container mx-auto px-4 flex justify-around">
-            <a href="#news" class="hover:text-red-500">Notícias</a>
+        <div class="container mx-auto px-4 flex justify-around items-center">
             <a href="#home" class="hover:text-red-500">Início</a>
-            <a href="#crimes" class="hover:text-red-500">Códigos Penais</a>
-            <a href="#calculator" class="hover:text-red-500">Calculadora Penal</a>
-            <a href="#search" class="hover:text-red-500">Pesquisa de Crimes</a>
-            <a href="#login" id="login-link" class="hover:text-red-500">Login</a>
-            <div id="auth-nav" class="hidden">
+            <a href="#news" class="hover:text-red-500">Notícias</a>
+            <a href="#crimes" id="crimes-link" class="hover:text-red-500 hidden">Códigos Penais</a>
+            <a href="#calculator" id="calculator-link" class="hover:text-red-500 hidden">Calculadora Penal</a>
+            <a href="#search" id="search-link" class="hover:text-red-500 hidden">Pesquisa de Crimes</a>
+            <a href="#manage-access" id="manage-access-link" class="hover:text-red-500 hidden">Gerenciar</a>
+            <div id="auth-nav" class="hidden flex items-center space-x-2">
+                <span id="user-role" class="text-sm"></span>
                 <button onclick="logout()" class="hover:text-red-500">Logout</button>
             </div>
         </div>
     </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="container mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-red-500 mb-4">Bem-vindo à Polícia de Lexus RolePlay</h2>
+        <p class="mb-4">Este é o portal oficial da Polícia de Lexus RolePlay para consulta de códigos penais, cálculo de penalidades, pesquisa de infrações e notícias policiais no servidor de GTA RP. Confira as últimas <a href="#news" class="text-red-500 hover:underline">Notícias</a>. Oficiais podem acessar a <a href="#calculator" class="text-red-500 hover:underline">Calculadora Penal</a>, <a href="#crimes" class="text-red-500 hover:underline">Códigos Penais</a> e <a href="#search" class="text-red-500 hover:underline">Pesquisa de Crimes</a> após login. Comandantes podem gerenciar acessos na seção <a href="#manage-access" class="text-red-500 hover:underline">Gerenciar</a>.</p>
+    </section>
 
     <!-- News Section -->
     <section id="news" class="container mx-auto px-4 py-8">
@@ -180,14 +233,8 @@
         </div>
     </section>
 
-    <!-- Home Section -->
-    <section id="home" class="container mx-auto px-4 py-8">
-        <h2 class="text-2xl font-bold text-red-500 mb-4">Bem-vindo à Polícia de Lexus RolePlay</h2>
-        <p class="mb-4">Este é o portal oficial da Polícia de Lexus RolePlay para consulta de códigos penais, cálculo de penalidades, pesquisa de infrações e notícias policiais no servidor de GTA RP. Confira as últimas <a href="#news" class="text-red-500 hover:underline">Notícias</a>, utilize a <a href="#calculator" class="text-red-500 hover:underline">Calculadora Penal</a> para determinar penas, multas e fianças, ou a <a href="#search" class="text-red-500 hover:underline">Pesquisa de Crimes</a> para encontrar detalhes de infrações específicas. Faça <a href="#login" class="text-red-500 hover:underline">login</a> para publicar ou gerenciar notícias.</p>
-    </section>
-
     <!-- Penal Codes Section -->
-    <section id="crimes" class="container mx-auto px-4 py-8">
+    <section id="crimes" class="container mx-auto px-4 py-8 hidden">
         <h2 class="text-2xl font-bold text-red-500 mb-4">Códigos Penais de Lexus RolePlay</h2>
         <div class="overflow-x-auto">
             <table class="w-full bg-gray-800 shadow-md rounded-lg">
@@ -208,7 +255,7 @@
     </section>
 
     <!-- Penal Calculator Section -->
-    <section id="calculator" class="container mx-auto px-4 py-8">
+    <section id="calculator" class="container mx-auto px-4 py-8 hidden">
         <h2 class="text-2xl font-bold text-red-500 mb-4">Calculadora Penal</h2>
         <div class="bg-gray-800 p-6 rounded-lg shadow-md relative">
             <label for="crime-code" class="block text-lg text-gray-200 mb-2">Digite o Artigo ou Nome do Crime:</label>
@@ -224,7 +271,7 @@
     </section>
 
     <!-- Crime Search Section -->
-    <section id="search" class="container mx-auto px-4 py-8">
+    <section id="search" class="container mx-auto px-4 py-8 hidden">
         <h2 class="text-2xl font-bold text-red-500 mb-4">Pesquisa de Crimes</h2>
         <div class="bg-gray-800 p-6 rounded-lg shadow-md">
             <label for="search-input" class="block text-lg text-gray-200 mb-2">Pesquisar por Delito, Artigo ou Categoria:</label>
@@ -234,16 +281,56 @@
         </div>
     </section>
 
+    <!-- Manage Access Section -->
+    <section id="manage-access" class="container mx-auto px-4 py-8 hidden">
+        <h2 class="text-2xl font-bold text-red-500 mb-4">Gerenciar Acessos</h2>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+            <div class="flex mb-4">
+                <button class="tab-button active" onclick="showTab('create-access')">Criar Acesso</button>
+                <button class="tab-button" onclick="showTab('remove-access')">Remover Acesso</button>
+            </div>
+            <div id="create-access" class="tab-content">
+                <h3 class="text-lg font-semibold text-gray-200 mb-4">Criar Novo Usuário</h3>
+                <label for="new-username" class="block text-gray-200 mb-2">Usuário:</label>
+                <input type="text" id="new-username" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Digite o nome de usuário">
+                <label for="new-password" class="block text-gray-200 mb-2">Senha:</label>
+                <input type="password" id="new-password" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Digite a senha">
+                <label for="user-role" class="block text-gray-200 mb-2">Função:</label>
+                <select id="user-role" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4">
+                    <option value="officer">Oficial</option>
+                </select>
+                <button onclick="createUser()" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Criar Usuário</button>
+                <p id="create-user-error" class="text-red-500 mt-2 hidden"></p>
+            </div>
+            <div id="remove-access" class="tab-content hidden">
+                <h3 class="text-lg font-semibold text-gray-200 mb-4">Remover Usuários</h3>
+                <label for="user-search" class="block text-gray-200 mb-2">Pesquisar Usuário:</label>
+                <input type="text" id="user-search" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Digite o nome de usuário" oninput="searchUsers()">
+                <div id="user-list" class="mt-4 text-gray-200"></div>
+                <button onclick="deleteSelectedUsers()" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 mt-4">Remover Selecionados</button>
+            </div>
+        </div>
+    </section>
+
     <!-- Login Section -->
     <section id="login" class="container mx-auto px-4 py-8">
-        <h2 class="text-2xl font-bold text-red-500 mb-4">Login</h2>
-        <div id="login-form" class="bg-gray-800 p-6 rounded-lg shadow-md">
-            <label for="username" class="block text-lg text-gray-200 mb-2">Usuário:</label>
-            <input type="text" id="username" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Digite seu usuário">
-            <label for="password" class="block text-lg text-gray-200 mb-2">Senha:</label>
-            <input type="password" id="password" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Digite sua senha">
-            <button onclick="login()" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Entrar</button>
-            <p id="login-error" class="text-red-500 mt-2 hidden">Usuário ou senha incorretos.</p>
+        <h2 class="text-2xl font-bold text-red-500 mb-4 text-center">Acesso ao Sistema Policial</h2>
+        <div class="login-container relative">
+            <div class="login-badge"></div>
+            <div id="login-form">
+                <div class="mb-4">
+                    <label for="username" class="block text-gray-200 mb-2 font-semibold">Usuário</label>
+                    <input type="text" id="username" class="login-input" placeholder="Digite seu usuário" aria-label="Usuário">
+                </div>
+                <div class="mb-4 relative">
+                    <label for="password" class="block text-gray-200 mb-2 font-semibold">Senha</label>
+                    <input type="password" id="password" class="login-input pr-10" placeholder="Digite sua senha" aria-label="Senha">
+                    <span class="password-toggle" onclick="togglePassword()" aria-label="Mostrar/esconder senha">👁️</span>
+                </div>
+                <button id="login-button" class="login-button" onclick="login()">Entrar</button>
+                <div id="login-spinner" class="spinner mt-4"></div>
+                <p id="login-error" class="text-red-500 mt-4 text-center hidden">Usuário ou senha incorretos.</p>
+            </div>
         </div>
     </section>
 
@@ -423,33 +510,51 @@
             { categoria: "Crimes contra o Patrimônio", delito: "Material Explosivo", artigo: "Art. 370", pena: "12-13", multa: 2000, afiancavel: "Sim", fiança: 30000 }
         ];
 
-        // Array for selected crimes
-        let selectedCrimes = [];
+        // Users array
+        let users = JSON.parse(localStorage.getItem('users')) || [
+            { username: "ari", password: "arineto2016", role: "commander" },
+            { username: "wl", password: "wl1112", role: "commander" }
+        ];
 
-        // Array for news (loaded from localStorage)
+        // News array
         let news = JSON.parse(localStorage.getItem('news')) || [
             {
                 title: "Recrutamento Aberto para a Polícia de Lexus RolePlay",
-                content: "A Polícia de Lexus RolePlay está com inscrições abertas para novos oficiais! Estamos em busca de cidadãos comprometidos, corajosos e dispostos a manter a ordem e a segurança nas ruas de Los Santos.\n\n**Requisitos para Candidatura:**\n- Ser maior de 18 anos no roleplay.\n- Possuir habilitação válida para veículos (CNH categoria B, no mínimo).\n- Não possuir antecedentes criminais graves (crimes inafiançáveis).\n- Disponibilidade para treinamentos e operações em horários variados.\n- Compromisso com as regras do servidor e do código penal de Lexus.\n\n**Como se Inscrever:**\n1. Acesse o canal oficial da Polícia no Discord do servidor Lexus RolePlay.\n2. Preencha o formulário de inscrição disponível no canal #recrutamento.\n3. Participe da entrevista e do treinamento prático agendados pela equipe.\n\n**Benefícios:**\n- Treinamento completo em operações policiais.\n- Oportunidade de ascensão hierárquica dentro da força policial.\n- Equipamentos e viaturas de ponta para operações.\n- Integração com uma equipe dedicada e respeitada no servidor.\n\nNão perca essa chance de fazer parte da elite policial de Los Santos! As inscrições ficam abertas até **31/07/2025**. Para dúvidas, contate o comando pelo Discord ou no QG da Polícia em Los Santos.",
+                content: "A Polícia de Lexus RolePlay está com inscrições abertas para novos oficiais! Buscamos cidadãos comprometidos, corajosos e dispostos a manter a ordem e a segurança nas ruas de Los Santos. Requisitos: ser maior de 18 anos no roleplay, possuir habilitação válida para veículos (CNH categoria B, no mínimo), não ter antecedentes criminais graves (crimes inafiançáveis), ter disponibilidade para treinamentos e operações em horários variados, e compromisso com as regras do servidor e do código penal de Lexus. Para se inscrever, acesse o canal oficial da Polícia no Discord do servidor Lexus RolePlay, preencha o formulário de inscrição no canal #recrutamento, e participe da entrevista e do treinamento prático agendados pela equipe. Benefícios incluem treinamento completo em operações policiais, oportunidade de ascensão hierárquica, equipamentos e viaturas de ponta, e integração com uma equipe dedicada e respeitada no servidor. Não perca essa chance de fazer parte da elite policial de Los Santos! Inscrições abertas até 31/07/2025. Para dúvidas, contate o comando pelo Discord ou no QG da Polícia em Los Santos.",
                 author: "Comandante João Silva",
                 date: "16/07/2025",
                 image: "https://cdn.discordapp.com/attachments/1379269843458719766/1394908923315748875/pmerj.png?ex=68792e6b&is=6877dceb&hm=0470ba69d550125fe2ab6deb613af50f180f7bf98228d99fb2b319d83032e3ea&"
             }
         ];
 
+        // Selected crimes for penal calculator
+        let selectedCrimes = [];
+
+        // Authentication state
+        let currentUser = null;
+
+        // Save users to localStorage
+        function saveUsers() {
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
         // Save news to localStorage
         function saveNews() {
             localStorage.setItem('news', JSON.stringify(news));
         }
 
-        // Hardcoded users for demo
-        const users = [
-            { username: "ari", password: "arineto2016" },
-            { username: "wl", password: "wldono1112" }
-        ];
-
-        // Authentication state
-        let isLoggedIn = false;
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggle = document.querySelector('.password-toggle');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggle.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggle.textContent = '👁️';
+            }
+        }
 
         // Login function
         function login() {
@@ -457,41 +562,108 @@
             const password = document.getElementById('password').value.trim();
             const loginError = document.getElementById('login-error');
             const loginForm = document.getElementById('login-form');
-            const newsForm = document.getElementById('news-form');
+            const loginButton = document.getElementById('login-button');
+            const loginSpinner = document.getElementById('login-spinner');
             const authNav = document.getElementById('auth-nav');
-            const loginLink = document.getElementById('login-link');
 
-            const user = users.find(u => u.username === username && u.password === password);
+            loginButton.classList.add('hidden');
+            loginSpinner.style.display = 'block';
+            loginError.classList.add('hidden');
 
-            if (user) {
-                isLoggedIn = true;
-                loginForm.classList.add('hidden');
-                newsForm.classList.remove('hidden');
-                authNav.classList.remove('hidden');
-                loginLink.classList.add('hidden');
-                loginError.classList.add('hidden');
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
-                updateNewsList(); // Refresh news list to show delete buttons
-            } else {
-                loginError.classList.remove('hidden');
-            }
+            // Simulate server processing
+            setTimeout(() => {
+                const user = users.find(u => u.username === username && u.password === password);
+
+                if (user) {
+                    currentUser = user;
+                    loginForm.classList.add('hidden');
+                    authNav.classList.remove('hidden');
+                    document.getElementById('user-role').textContent = `Bem-vindo, ${user.role === 'commander' ? 'Comandante' : 'Oficial'} ${user.username}`;
+                    document.getElementById('username').value = '';
+                    document.getElementById('password').value = '';
+                    updateUIForUser();
+                    window.location.hash = '#home'; // Redirect to home after login
+                } else {
+                    loginError.classList.remove('hidden');
+                }
+
+                loginButton.classList.remove('hidden');
+                loginSpinner.style.display = 'none';
+            }, 1000);
         }
 
         // Logout function
         function logout() {
-            isLoggedIn = false;
+            currentUser = null;
             document.getElementById('login-form').classList.remove('hidden');
-            document.getElementById('news-form').classList.add('hidden');
             document.getElementById('auth-nav').classList.add('hidden');
-            document.getElementById('login-link').classList.remove('hidden');
-            updateNewsList(); // Refresh news list to hide delete buttons
+            document.getElementById('news-form').classList.add('hidden');
+            document.getElementById('crimes').classList.add('hidden');
+            document.getElementById('calculator').classList.add('hidden');
+            document.getElementById('search').classList.add('hidden');
+            document.getElementById('manage-access').classList.add('hidden');
+            document.getElementById('crimes-link').classList.add('hidden');
+            document.getElementById('calculator-link').classList.add('hidden');
+            document.getElementById('search-link').classList.add('hidden');
+            document.getElementById('manage-access-link').classList.add('hidden');
+            updateNewsList();
+            window.location.hash = '#login'; // Redirect to login after logout
+        }
+
+        // Update UI based on user role
+        function updateUIForUser() {
+            const newsForm = document.getElementById('news-form');
+            const crimesSection = document.getElementById('crimes');
+            const calculatorSection = document.getElementById('calculator');
+            const searchSection = document.getElementById('search');
+            const manageAccessSection = document.getElementById('manage-access');
+            const crimesLink = document.getElementById('crimes-link');
+            const calculatorLink = document.getElementById('calculator-link');
+            const searchLink = document.getElementById('search-link');
+            const manageAccessLink = document.getElementById('manage-access-link');
+            const roleSelect = document.getElementById('user-role');
+
+            if (currentUser) {
+                // Officers and commanders can see these sections
+                crimesSection.classList.remove('hidden');
+                calculatorSection.classList.remove('hidden');
+                searchSection.classList.remove('hidden');
+                crimesLink.classList.remove('hidden');
+                calculatorLink.classList.remove('hidden');
+                searchLink.classList.remove('hidden');
+
+                // Only ari and wl can manage news
+                if (currentUser.username === 'ari' || currentUser.username === 'wl') {
+                    newsForm.classList.remove('hidden');
+                } else {
+                    newsForm.classList.add('hidden');
+                }
+
+                // All commanders can see manage access
+                if (currentUser.role === 'commander') {
+                    manageAccessSection.classList.remove('hidden');
+                    manageAccessLink.classList.remove('hidden');
+                    // Only ari and wl can assign commander role
+                    if (currentUser.username === 'ari' || currentUser.username === 'wl') {
+                        roleSelect.innerHTML = `
+                            <option value="officer">Oficial</option>
+                            <option value="commander">Comandante</option>
+                        `;
+                    } else {
+                        roleSelect.innerHTML = `<option value="officer">Oficial</option>`;
+                    }
+                } else {
+                    manageAccessSection.classList.add('hidden');
+                    manageAccessLink.classList.add('hidden');
+                }
+            }
+            updateNewsList();
         }
 
         // Populate crimes table
         function populateCrimesTable() {
             const tableBody = document.getElementById('crimes-table');
-            tableBody.innerHTML = ''; // Clear table
+            tableBody.innerHTML = '';
             crimes.forEach(crime => {
                 const row = document.createElement('tr');
                 row.className = 'table-row';
@@ -643,7 +815,7 @@
 
         // Add news
         function addNews() {
-            if (!isLoggedIn) return;
+            if (!currentUser || (currentUser.username !== 'ari' && currentUser.username !== 'wl')) return;
 
             const title = document.getElementById('news-title').value.trim();
             const content = document.getElementById('news-content').value.trim();
@@ -693,7 +865,7 @@
 
         // Delete news
         function deleteNews(index) {
-            if (!isLoggedIn) return;
+            if (!currentUser || (currentUser.username !== 'ari' && currentUser.username !== 'wl')) return;
             news.splice(index, 1);
             saveNews();
             updateNewsList();
@@ -719,7 +891,7 @@
                         <p>${item.content.replace(/\n/g, '<br>')}</p>
                         ${item.image ? `<img src="${item.image}" class="news-image" alt="Imagem da notícia">` : ''}
                     </div>
-                    ${isLoggedIn ? `<button class="delete-button" onclick="deleteNews(${index})">Apagar Notícia</button>` : ''}
+                    ${currentUser && (currentUser.username === 'ari' || currentUser.username === 'wl') ? `<button class="delete-button" onclick="deleteNews(${index})">Apagar Notícia</button>` : ''}
                 `;
                 newsList.appendChild(newsItem);
             });
@@ -731,16 +903,109 @@
             content.classList.toggle('open');
         }
 
+        // Create user
+        function createUser() {
+            if (!currentUser || currentUser.role !== 'commander') return;
+
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value.trim();
+            const role = document.getElementById('user-role').value;
+            const error = document.getElementById('create-user-error');
+
+            if (!username || !password) {
+                error.textContent = 'Usuário e senha são obrigatórios.';
+                error.classList.remove('hidden');
+                return;
+            }
+
+            if (users.find(u => u.username === username)) {
+                error.textContent = 'Usuário já existe.';
+                error.classList.remove('hidden');
+                return;
+            }
+
+            users.push({ username, password, role });
+            saveUsers();
+            document.getElementById('new-username').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('user-role').value = 'officer';
+            error.classList.add('hidden');
+            searchUsers();
+        }
+
+        // Search users
+        function searchUsers() {
+            const searchInput = document.getElementById('user-search').value.trim().toLowerCase();
+            const userList = document.getElementById('user-list');
+            const filteredUsers = users.filter(user => user.username.toLowerCase().includes(searchInput));
+
+            userList.innerHTML = '';
+
+            if (filteredUsers.length === 0) {
+                userList.innerHTML = '<p class="text-gray-400">Nenhum usuário encontrado.</p>';
+                return;
+            }
+
+            let tableHTML = '<table class="w-full bg-gray-800 rounded-lg"><thead><tr class="bg-red-900 text-white"><th class="py-2 px-4">Selecionar</th><th class="py-2 px-4">Usuário</th><th class="py-2 px-4">Função</th></tr></thead><tbody>';
+            filteredUsers.forEach((user, index) => {
+                if (user.username !== 'ari' && user.username !== 'wl') {
+                    tableHTML += `
+                        <tr class="table-row">
+                            <td class="py-2 px-4"><input type="checkbox" class="user-checkbox" data-username="${user.username}"></td>
+                            <td class="py-2 px-4">${user.username}</td>
+                            <td class="py-2 px-4">${user.role === 'commander' ? 'Comandante' : 'Oficial'}</td>
+                        </tr>
+                    `;
+                }
+            });
+            tableHTML += '</tbody></table>';
+            userList.innerHTML = tableHTML;
+        }
+
+        // Delete selected users
+        function deleteSelectedUsers() {
+            if (!currentUser || currentUser.role !== 'commander') return;
+
+            const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+            const usernamesToDelete = Array.from(checkboxes).map(cb => cb.dataset.username);
+
+            if (usernamesToDelete.length === 0) {
+                document.getElementById('user-list').innerHTML = '<p class="text-red-500">Nenhum usuário selecionado.</p>';
+                return;
+            }
+
+            users = users.filter(user => !usernamesToDelete.includes(user.username));
+            saveUsers();
+            searchUsers();
+        }
+
+        // Show tab
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
+        }
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
             populateCrimesTable();
             updateSelectedCrimes();
             updateNewsList();
-            if (!isLoggedIn) {
+            if (!currentUser) {
                 document.getElementById('news-form').classList.add('hidden');
+                document.getElementById('crimes').classList.add('hidden');
+                document.getElementById('calculator').classList.add('hidden');
+                document.getElementById('search').classList.add('hidden');
+                document.getElementById('manage-access').classList.add('hidden');
+                document.getElementById('crimes-link').classList.add('hidden');
+                document.getElementById('calculator-link').classList.add('hidden');
+                document.getElementById('search-link').classList.add('hidden');
+                document.getElementById('manage-access-link').classList.add('hidden');
                 document.getElementById('auth-nav').classList.add('hidden');
-                document.getElementById('login-link').classList.remove('hidden');
+                window.location.hash = '#login'; // Default to login for non-logged-in users
             }
+            searchUsers();
         });
 
         // Close dropdown on outside click
