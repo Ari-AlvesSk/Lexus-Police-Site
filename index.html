@@ -1,0 +1,498 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polícia de Lexus RolePlay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-logo {
+            filter: url(#gradient-filter);
+        }
+        .table-row:nth-child(even) {
+            background-color: #2d3748;
+        }
+        .table-row:hover {
+            background-color: #4a5568;
+        }
+        .dropdown {
+            max-height: 200px;
+            overflow-y: auto;
+            position: absolute;
+            z-index: 10;
+            width: 100%;
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 0.375rem;
+        }
+        .dropdown-item:hover {
+            background-color: #e53e3e;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans">
+    <!-- SVG para o filtro de gradiente na logo -->
+    <svg height="0" width="0">
+        <defs>
+            <filter id="gradient-filter">
+                <feColorMatrix type="matrix" values="1 0 0 0 0
+                                                    0 0.5 0 0 0
+                                                    0 0 0.5 0 0
+                                                    0 0 0 1 0" />
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- Cabeçalho -->
+    <header class="bg-gradient-to-r from-red-900 to-gray-900 text-white py-4">
+        <div class="container mx-auto px-4 flex items-center">
+            <img src="https://media.discordapp.net/attachments/1379269843458719766/1394140869073961041/sem_fundo.png?ex=68785d5d&is=68770bdd&hm=74ebc9cefb0e7d9afc2a7dc5a38d90fde59e9eb5543db45559ec4d96cc6886a9&=&format=webp&quality=lossless&width=438&height=438" alt="Logo Polícia Lexus RolePlay" class="h-16 gradient-logo">
+            <div>
+                <h1 class="text-3xl font-bold">Polícia de Lexus RolePlay</h1>
+                <p class="text-lg">Sistema Oficial de Consulta de Crimes e Penalidades</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navegação -->
+    <nav class="bg-gray-800 text-white py-2">
+        <div class="container mx-auto px-4 flex justify-around">
+            <a href="#home" class="hover:text-red-500">Início</a>
+            <a href="#crimes" class="hover:text-red-500">Códigos Penais</a>
+            <a href="#calculator" class="hover:text-red-500">Calculadora Penal</a>
+            <a href="#search" class="hover:text-red-500">Pesquisa de Crimes</a>
+        </div>
+    </nav>
+
+    <!-- Página Inicial -->
+    <section id="home" class="container mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-red-500 mb-4">Bem-vindo à Polícia de Lexus RolePlay</h2>
+        <p class="mb-4">Este é o portal oficial da Polícia de Lexus RolePlay para consulta de códigos penais, cálculo de penalidades e pesquisa de infrações no servidor de GTA RP. Utilize a <a href="#calculator" class="text-red-500 hover:underline">Calculadora Penal</a> para determinar penas, multas e fianças ou a <a href="#search" class="text-red-500 hover:underline">Pesquisa de Crimes</a> para encontrar detalhes de infrações específicas.</p>
+    </section>
+
+    <!-- Lista de Códigos Penais -->
+    <section id="crimes" class="container mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-red-500 mb-4">Códigos Penais de Lexus RolePlay</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full bg-gray-800 shadow-md rounded-lg">
+                <thead>
+                    <tr class="bg-red-900 text-white">
+                        <th class="py-2 px-4">Categoria</th>
+                        <th class="py-2 px-4">Delito</th>
+                        <th class="py-2 px-4">Artigo/Código</th>
+                        <th class="py-2 px-4">Pena (Meses)</th>
+                        <th class="py-2 px-4">Multa ($)</th>
+                        <th class="py-2 px-4">Afiançável</th>
+                        <th class="py-2 px-4">Valor da Fiança ($)</th>
+                    </tr>
+                </thead>
+                <tbody id="crimes-table" class="text-gray-200"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Calculadora Penal -->
+    <section id="calculator" class="container mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-red-500 mb-4">Calculadora Penal</h2>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md relative">
+            <label for="crime-code" class="block text-lg text-gray-200 mb-2">Digite o Artigo ou Nome do Crime:</label>
+            <input type="text" id="crime-code" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Ex.: Art. 155 ou Furto" oninput="showSuggestions()">
+            <div id="suggestions" class="dropdown hidden"></div>
+            <div class="flex space-x-4 mb-4">
+                <button onclick="addCrime()" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Adicionar Crime</button>
+                <button onclick="clearSelection()" class="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700">Limpar Seleção</button>
+            </div>
+            <div id="selected-crimes" class="mt-4 text-gray-200"></div>
+            <div id="totals" class="mt-4 text-gray-200"></div>
+        </div>
+    </section>
+
+    <!-- Pesquisa de Crimes -->
+    <section id="search" class="container mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-red-500 mb-4">Pesquisa de Crimes</h2>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+            <label for="search-input" class="block text-lg text-gray-200 mb-2">Pesquisar por Delito, Artigo ou Categoria:</label>
+            <input type="text" id="search-input" class="w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white mb-4" placeholder="Ex.: Furto, Art. 155, Pessoa">
+            <button onclick="searchCrimes()" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Pesquisar</button>
+            <div id="search-results" class="mt-4 text-gray-200"></div>
+        </div>
+    </section>
+
+    <!-- Rodapé -->
+    <footer class="bg-gradient-to-r from-red-900 to-gray-900 text-white py-4">
+        <div class="container mx-auto px-4">
+            <p>© 2025 Polícia de Lexus RolePlay. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Dados dos crimes
+        const crimes = [
+            { categoria: "Crimes contra a Pessoa", delito: "Homicídio Culposo", artigo: "Art. 121 §3", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal Leve", artigo: "Art. 129", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal Culposa", artigo: "Art. 129 §6", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Ameaça", artigo: "Art. 147", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Perseguição (Stalking)", artigo: "Art. 147-A", pena: "6-24", multa: 18000, afiancavel: "Sim", fiança: 50000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Exibição de Material Obsceno", artigo: "Art. 300", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Porte de Arma Branca", artigo: "Art. 301", pena: "3-12", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Ameaça com Arma Branca", artigo: "Art. 302", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Disparo de Arma de Fogo (Sem Vítima)", artigo: "Art. 303", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Agressão Verbal em Público", artigo: "Art. 304", pena: "1-3", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Provocação de Tumulto", artigo: "Art. 305", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Exibição de Arma em Público", artigo: "Art. 306", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Intimidação em Evento Público", artigo: "Art. 307", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal Leve em Confronto", artigo: "Art. 308", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Agressão em Estabelecimento Comercial", artigo: "Art. 309", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Provocação de Pânico", artigo: "Art. 310", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Ameaça por Comunicação Eletrônica", artigo: "Art. 311", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Assédio em Via Pública", artigo: "Art. 312", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Exposição de Menor a Risco", artigo: "Art. 313", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Violência em Evento Esportivo", artigo: "Art. 314", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal em Briga de Rua", artigo: "Art. 315", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Ameaça com Arma de Fogo", artigo: "Art. 316", pena: "6-12", multa: 20000, afiancavel: "Sim", fiança: 50000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Coação Física Leve", artigo: "Art. 317", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Exibição de Material Perigoso", artigo: "Art. 318", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Provocação de Conflito em Bar", artigo: "Art. 319", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Lesão Corporal por Negligência", artigo: "Art. 320", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Agressão em Transporte Público", artigo: "Art. 321", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Intimidação com Arma Falsa", artigo: "Art. 322", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Assédio em Local de Trabalho", artigo: "Art. 323", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Pessoa", delito: "Provocação de Briga em Clube", artigo: "Art. 324", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Desacato", artigo: "Art. 331", pena: "6-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Falsa Identidade", artigo: "Art. 307", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Desobediência à Ordem Policial", artigo: "Art. 330", pena: "1-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Suborno de Funcionário Público", artigo: "Art. 325", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação da Tranquilidade", artigo: "Art. 65 (LCP)", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Embriaguez em Público", artigo: "Art. 326", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Conduta Desordeira", artigo: "Art. 327", pena: "1-3", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação da Ordem Pública", artigo: "Art. 328", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação com Barulho de Veículo", artigo: "Art. 329", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação com Som Alto", artigo: "Art. 330", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação com Fumaça", artigo: "Art. 331", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação em Evento Público", artigo: "Art. 332", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Jogo de Azar", artigo: "Art. 50 (LCP)", pena: "3-12", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Organização de Evento sem Licença", artigo: "Art. 333", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Organização de Protesto sem Autorização", artigo: "Art. 334", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Organização de Luta Ilegal", artigo: "Art. 335", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Organização de Rinha Ilegal", artigo: "Art. 336", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Bloqueio Ilegal de Via Pública", artigo: "Art. 337", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Desrespeito a Bloqueio Policial", artigo: "Art. 338", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Indevido de Sinal de Emergência", artigo: "Art. 339", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Indevido de Sirene", artigo: "Art. 340", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Indevido de Uniforme", artigo: "Art. 341", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Ilegal de Frequência Policial", artigo: "Art. 342", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Fuga da Polícia (Não Violenta)", artigo: "Art. 343", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Ilegal de Fogos de Artifício", artigo: "Art. 344", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Propaganda Ilegal", artigo: "Art. 345", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Desacato em Operação Policial", artigo: "Art. 346", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Resistência Não Violenta", artigo: "Art. 347", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Interferência em Investigação", artigo: "Art. 348", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Falsa Denúncia", artigo: "Art. 349", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Indevido de Equipamento Policial", artigo: "Art. 350", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Perturbação com Drones", artigo: "Art. 351", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Desrespeito a Ordem de Evacuação", artigo: "Art. 352", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Incitação à Desordem", artigo: "Art. 353", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Desacato em Audiência Pública", artigo: "Art. 354", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Organização de Festa Ilegal", artigo: "Art. 355", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Uso Ilegal de Scanner Policial", artigo: "Art. 356", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Obstrução de Via Pública", artigo: "Art. 357", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Provocação de Caos em Evento", artigo: "Art. 358", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Desrespeito a Autoridade em Blitz", artigo: "Art. 359", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra a Ordem Pública", delito: "Falsa Comunicação de Crime", artigo: "Art. 340-A", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Furto Simples", artigo: "Art. 155", pena: "12-24", multa: 18000, afiancavel: "Sim", fiança: 50000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Furto Noturno", artigo: "Art. 155 §1", pena: "16-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Dano Simples", artigo: "Art. 163", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Estelionato Simples", artigo: "Art. 171", pena: "12-24", multa: 18000, afiancavel: "Sim", fiança: 50000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Furto de Veículo", artigo: "Art. 360", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Furto de Baixo Valor (até $500)", artigo: "Art. 361", pena: "1-3", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Passeio Não Autorizado com Veículo", artigo: "Art. 362", pena: "6-12", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Documento Particular", artigo: "Art. 298", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Comércio de Produtos Falsificados", artigo: "Art. 363", pena: "12-24", multa: 18000, afiancavel: "Sim", fiança: 50000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Placa de Veículo", artigo: "Art. 364", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ilegal de Peças de Veículo", artigo: "Art. 365", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Ingressos", artigo: "Art. 366", pena: "6-12", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Assinatura", artigo: "Art. 367", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Cheque", artigo: "Art. 368", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Documento de Veículo", artigo: "Art. 369", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Comprovante de Pagamento", artigo: "Art. 370", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Licença de Evento", artigo: "Art. 371", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Selo de Estacionamento", artigo: "Art. 372", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ilegal de Eletrônicos", artigo: "Art. 373", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Comércio de Produtos Piratas", artigo: "Art. 374", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ilegal de Roupas", artigo: "Art. 375", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ilegal de Acessórios de Veículo", artigo: "Art. 376", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ilegal de Combustível", artigo: "Art. 377", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Comércio de Bebidas sem Licença", artigo: "Art. 378", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Comércio de Alimentos sem Licença", artigo: "Art. 379", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Pichação (Graffiti)", artigo: "Art. 380", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Vandalismo em Propriedade Pública", artigo: "Art. 381", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Invasão de Propriedade Privada", artigo: "Art. 382", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Violação de Domicílio", artigo: "Art. 150", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Comércio Ambulante sem Licença", artigo: "Art. 383", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Despejo Ilegal de Resíduos", artigo: "Art. 384", pena: "1-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Patrimônio", delito: "Falsificação de Bilhete de Transporte", artigo: "Art. 385", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Porte Ilegal de Arma de Fogo (Pistola)", artigo: "Art. 14 (Lei 10.826)", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Porte Ilegal de Arma de Fogo (Metralhadora/Fuzil)", artigo: "Art. 386", pena: "12-24", multa: 30000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Posse de Arma de Fogo Descarregada", artigo: "Art. 387", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Uso de Arma de Choque sem Licença", artigo: "Art. 388", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Comércio de Armas de Brinquedo", artigo: "Art. 389", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Equipamento de Vigilância", artigo: "Art. 390", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Câmera Oculta", artigo: "Art. 391", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Equipamento de Hacking", artigo: "Art. 392", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Invasão de Dispositivo Informático", artigo: "Art. 154-A", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Scanner Policial", artigo: "Art. 393", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Frequência Policial", artigo: "Art. 394", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Fabricação de Arma Caseira", artigo: "Art. 395", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Posse de Material Explosivo Leve", artigo: "Art. 396", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Comércio Ilegal de Munição", artigo: "Art. 397", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra a Segurança Pública", delito: "Uso Ilegal de Equipamento de GPS", artigo: "Art. 398", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra Drogas", delito: "Posse de Droga para Uso Pessoal", artigo: "Art. 28 (Lei 11.343)", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra Drogas", delito: "Tráfico de Pequena Quantidade", artigo: "Art. 399", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra Drogas", delito: "Fabricação de Droga para Uso Pessoal", artigo: "Art. 400", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra Drogas", delito: "Comércio Ilegal de Substância Controlada", artigo: "Art. 401", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra Drogas", delito: "Transporte de Droga para Uso Pessoal", artigo: "Art. 402", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra Drogas", delito: "Posse de Equipamento para Fabricação de Droga", artigo: "Art. 403", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra Drogas", delito: "Venda de Droga em Pequena Escala", artigo: "Art. 404", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra Drogas", delito: "Indução ao Uso de Droga", artigo: "Art. 405", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra Drogas", delito: "Posse de Substância Proibida", artigo: "Art. 406", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra Drogas", delito: "Consumo de Droga em Local Público", artigo: "Art. 407", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra Drogas", delito: "Comércio Ilegal de Medicamento Controlado", artigo: "Art. 408", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra Quadrilhas", delito: "Associação Criminosa (Planejamento Menor)", artigo: "Art. 288", pena: "12-24", multa: 25000, afiancavel: "Sim", fiança: 60000 },
+            { categoria: "Crimes contra Quadrilhas", delito: "Participação em Reunião de Quadrilha", artigo: "Art. 409", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra Quadrilhas", delito: "Recrutamento para Quadrilha", artigo: "Art. 410", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra Quadrilhas", delito: "Planejamento de Furto em Grupo", artigo: "Art. 411", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra Quadrilhas", delito: "Organização de Corrida Ilegal", artigo: "Art. 412", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra Quadrilhas", delito: "Formação de Grupo para Perturbação", artigo: "Art. 413", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra Quadrilhas", delito: "Participação em Racha Ilegal", artigo: "Art. 414", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra Quadrilhas", delito: "Planejamento de Invasão de Propriedade", artigo: "Art. 415", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra Quadrilhas", delito: "Organização de Jogo Ilegal", artigo: "Art. 416", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra Quadrilhas", delito: "Formação de Grupo para Vandalismo", artigo: "Art. 417", pena: "3-6", multa: 12000, afiancavel: "Sim", fiança: 30000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Embriaguez ao Volante", artigo: "Art. 306 (CTB)", pena: "6-12", multa: 18000, afiancavel: "Sim", fiança: 45000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Direção Perigosa", artigo: "Art. 418", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Corrida de Rua Ilegal", artigo: "Art. 419", pena: "3-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Fuga de Local de Acidente", artigo: "Art. 420", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Alteração Ilegal de Veículo", artigo: "Art. 421", pena: "6-12", multa: 15000, afiancavel: "Sim", fiança: 40000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Exibição Perigosa de Veículo", artigo: "Art. 422", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Estacionamento em Local Proibido", artigo: "Art. 423", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Desrespeito a Sinalização de Trânsito", artigo: "Art. 424", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Desrespeito a Limite de Velocidade", artigo: "Art. 425", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Desrespeito a Faixa de Pedestre", artigo: "Art. 426", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Uso Indevido de Farol Alto", artigo: "Art. 427", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra o Trânsito", delito: "Uso Indevido de Placa de Estacionamento", artigo: "Art. 428", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Meio Ambiente", delito: "Pesca Ilegal", artigo: "Art. 429", pena: "1-3", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Meio Ambiente", delito: "Caça Ilegal em Área Urbana", artigo: "Art. 430", pena: "3-6", multa: 10000, afiancavel: "Sim", fiança: 25000 },
+            { categoria: "Crimes contra o Meio Ambiente", delito: "Descarte de Lixo Perigoso", artigo: "Art. 431", pena: "0.5-2", multa: 8000, afiancavel: "Sim", fiança: 20000 },
+            { categoria: "Crimes contra o Meio Ambiente", delito: "Contrabando de Bens Menores", artigo: "Art. 432", pena: "12-24", multa: 20000, afiancavel: "Sim", fiança: 60000 }
+        ];
+
+        // Array para armazenar crimes selecionados
+        let selectedCrimes = [];
+
+        // Função para preencher a tabela de crimes
+        function populateCrimesTable() {
+            const tableBody = document.getElementById('crimes-table');
+            crimes.forEach(crime => {
+                const row = document.createElement('tr');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <td class="py-2 px-4">${crime.categoria}</td>
+                    <td class="py-2 px-4">${crime.delito}</td>
+                    <td class="py-2 px-4">${crime.artigo}</td>
+                    <td class="py-2 px-4">${crime.pena}</td>
+                    <td class="py-2 px-4">$${crime.multa.toLocaleString()}</td>
+                    <td class="py-2 px-4">${crime.afiancavel}</td>
+                    <td class="py-2 px-4">$${crime.fiança.toLocaleString()}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Função para exibir sugestões na calculadora
+        function showSuggestions() {
+            const input = document.getElementById('crime-code').value.trim().toLowerCase();
+            const suggestionsDiv = document.getElementById('suggestions');
+            suggestionsDiv.innerHTML = '';
+            suggestionsDiv.classList.add('hidden');
+
+            if (input.length === 0) return;
+
+            const filteredCrimes = crimes.filter(crime => 
+                crime.artigo.toLowerCase().includes(input) || 
+                crime.delito.toLowerCase().includes(input)
+            ).slice(0, 5);
+
+            if (filteredCrimes.length > 0) {
+                suggestionsDiv.classList.remove('hidden');
+                filteredCrimes.forEach(crime => {
+                    const div = document.createElement('div');
+                    div.className = 'dropdown-item p-2 cursor-pointer text-gray-200';
+                    div.textContent = `${crime.artigo} - ${crime.delito}`;
+                    div.onclick = () => {
+                        document.getElementById('crime-code').value = crime.artigo;
+                        suggestionsDiv.innerHTML = '';
+                        suggestionsDiv.classList.add('hidden');
+                        addCrime(crime);
+                    };
+                    suggestionsDiv.appendChild(div);
+                });
+            }
+        }
+
+        // Função para adicionar crime à lista de selecionados
+        function addCrime(crime = null) {
+            const codeInput = document.getElementById('crime-code').value.trim();
+            const selectedCrime = crime || crimes.find(c => c.artigo.toLowerCase() === codeInput.toLowerCase());
+
+            if (selectedCrime) {
+                selectedCrimes.push(selectedCrime);
+                document.getElementById('crime-code').value = '';
+                updateSelectedCrimes();
+            } else {
+                const selectedCrimesDiv = document.getElementById('selected-crimes');
+                selectedCrimesDiv.innerHTML = '<p class="text-red-500">Código ou crime não encontrado. Verifique o artigo ou nome informado.</p>';
+            }
+        }
+
+        // Função para atualizar a exibição dos crimes selecionados e totais
+        function updateSelectedCrimes() {
+            const selectedCrimesDiv = document.getElementById('selected-crimes');
+            const totalsDiv = document.getElementById('totals');
+            selectedCrimesDiv.innerHTML = '';
+
+            if (selectedCrimes.length === 0) {
+                selectedCrimesDiv.innerHTML = '<p class="text-gray-400">Nenhum crime selecionado.</p>';
+                totalsDiv.innerHTML = '';
+                return;
+            }
+
+            let totalPenaltyMin = 0;
+            let totalPenaltyMax = 0;
+            let totalFine = 0;
+            let totalBail = 0;
+            let isBailable = selectedCrimes.every(crime => crime.afiancavel === "Sim");
+
+            let tableHTML = '<table class="w-full bg-gray-800 rounded-lg"><thead><tr class="bg-red-900 text-white"><th class="py-2 px-4">Categoria</th><th class="py-2 px-4">Delito</th><th class="py-2 px-4">Artigo</th><th class="py-2 px-4">Pena</th><th class="py-2 px-4">Multa</th><th class="py-2 px-4">Afiançável</th><th class="py-2 px-4">Fiança</th></tr></thead><tbody>';
+            selectedCrimes.forEach(crime => {
+                const [min, max] = crime.pena.split('-').map(Number);
+                totalPenaltyMin += min || 0;
+                totalPenaltyMax += max || min || 0;
+                totalFine += crime.multa;
+                totalBail += crime.fiança;
+                tableHTML += `
+                    <tr class="table-row">
+                        <td class="py-2 px-4">${crime.categoria}</td>
+                        <td class="py-2 px-4">${crime.delito}</td>
+                        <td class="py-2 px-4">${crime.artigo}</td>
+                        <td class="py-2 px-4">${crime.pena}</td>
+                        <td class="py-2 px-4">$${crime.multa.toLocaleString()}</td>
+                        <td class="py-2 px-4">${crime.afiancavel}</td>
+                        <td class="py-2 px-4">$${crime.fiança.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            tableHTML += '</tbody></table>';
+            selectedCrimesDiv.innerHTML = tableHTML;
+
+            totalsDiv.innerHTML = `
+                <p><strong>Total Pena:</strong> ${totalPenaltyMin}-${totalPenaltyMax} meses</p>
+                <p><strong>Total Multa:</strong> $${totalFine.toLocaleString()}</p>
+                <p><strong>Afiançável:</strong> ${isBailable ? 'Sim' : 'Não'}</p>
+                <p><strong>Total Fiança:</strong> ${isBailable ? '$' + totalBail.toLocaleString() : 'N/A'}</p>
+            `;
+        }
+
+        // Função para limpar a seleção
+        function clearSelection() {
+            selectedCrimes = [];
+            document.getElementById('crime-code').value = '';
+            updateSelectedCrimes();
+        }
+
+        // Função para pesquisar crimes
+        function searchCrimes() {
+            const searchInput = document.getElementById('search-input').value.trim().toLowerCase();
+            const resultsDiv = document.getElementById('search-results');
+            const filteredCrimes = crimes.filter(crime => 
+                crime.delito.toLowerCase().includes(searchInput) ||
+                crime.artigo.toLowerCase().includes(searchInput) ||
+                crime.categoria.toLowerCase().includes(searchInput)
+            );
+
+            if (filteredCrimes.length > 0) {
+                let resultsHTML = '<table class="w-full bg-gray-800 rounded-lg"><thead><tr class="bg-red-900 text-white"><th class="py-2 px-4">Categoria</th><th class="py-2 px-4">Delito</th><th class="py-2 px-4">Artigo</th><th class="py-2 px-4">Pena</th><th class="py-2 px-4">Multa</th><th class="py-2 px-4">Afiançável</th><th class="py-2 px-4">Fiança</th></tr></thead><tbody>';
+                filteredCrimes.forEach(crime => {
+                    resultsHTML += `
+                        <tr class="table-row">
+                            <td class="py-2 px-4">${crime.categoria}</td>
+                            <td class="py-2 px-4">${crime.delito}</td>
+                            <td class="py-2 px-4">${crime.artigo}</td>
+                            <td class="py-2 px-4">${crime.pena}</td>
+                            <td class="py-2 px-4">$${crime.multa.toLocaleString()}</td>
+                            <td class="py-2 px-4">${crime.afiancavel}</td>
+                            <td class="py-2 px-4">$${crime.fiança.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                resultsHTML += '</tbody></table>';
+                resultsDiv.innerHTML = resultsHTML;
+            } else {
+                resultsDiv.innerHTML = '<p class="text-red-500">Nenhum crime encontrado para o termo pesquisado.</p>';
+            }
+        }
+
+        // Inicializar a tabela ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            populateCrimesTable();
+            updateSelectedCrimes();
+        });
+
+        // Fechar o dropdown quando clicar fora
+        document.addEventListener('click', (e) => {
+            const suggestionsDiv = document.getElementById('suggestions');
+            const input = document.getElementById('crime-code');
+            if (!suggestionsDiv.contains(e.target) && e.target !== input) {
+                suggestionsDiv.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
